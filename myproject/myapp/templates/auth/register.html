@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    <title>Register</title>
+{% endblock %}
+
+{% block content %}
+<h2>Create an Account</h2>
+<form method="post">
+  {% csrf_token %}
+  <label>Username</label>
+  <input type="text" name="username" required>
+  <label>Email</label>
+  <input type="email" name="email">
+  <label>Password</label>
+  <input type="password" name="password" required>
+  <label>Confirm Password</label>
+  <input type="password" name="confirm" required>
+  <button type="submit">Register</button>
+</form>
+<p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+{% if messages %}
+  <ul>
+  {% for message in messages %}
+    <li>{{ message }}</li>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}

@@ -1,7 +1,4 @@
-from django.shortcuts import render,redirect
-from django.http import HttpResponse
-from myapp.models import Person
-from django.contrib import messages
+from django.shortcuts import render
 
 # Create your views here.
 def index(request):
@@ -10,8 +7,7 @@ def index(request):
 def about(request):
     return render(request,"about.html")
 
-def form(request):
-    if request.method == "POST":
-        
-        pass
-    return render(request, "form.html")  
+def home(request):
+    if request.user.is_authenticated:
+        return render(request, "dashboard.html", {})
+    return render(request, "index.html", {})

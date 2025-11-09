@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}<title>Quiz Detail — {{ quiz.title }}</title>{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="d-flex justify-content-between align-items-center">
+    <h2>{{ quiz.title }}</h2>
+    <div>
+      <a class="btn btn-outline-info" href="{% url 'create_quiz:add_question' quiz.pk %}">Add Question</a>
+      <a class="btn btn-outline-secondary" href="{% url 'create_quiz:quiz_list' %}">Back to My Quizzes</a>
+    </div>
+  </div>
+
+  <p class="text-muted">{{ quiz.description }}</p>
+
+  <hr>
+
+  <h4>Questions</h4>
+
+  <div id="questions-list" class="list-group">
+    {# Ensure questions ordered by .order #}
+    {% for q in quiz.questions.all|dictsort:"order" %}
+      <div class="list-group-item d-flex justify-content-between align-items-center" draggable="true" data-qid="{{ q.id }}">
+        <div>
+          <span class="drag-handle me-2" style="cursor:grab">☰</span>
+          <strong>Q{{ q.order }}.</strong> {{ q.text }}
+        </div>
+        <div>
+          <a class="btn btn-sm btn-secondary" href="{% url 'create_quiz:edit_question' q.pk %}">Edit</a>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-muted">No questions yet.</p>
+    {% endfor %}
+  </div>
+
+  <div class="mt-3 d-flex align-items-center">
+    <button id="save-order-btn" class="btn btn-primary">Save order</button>
+    <span id="save-status" class="ms-3"></span>
+  </div>
+</div>
+
+<script>
+/* Full client JS: drag/drop, collect order, POST JSON with CSRF from cookie,
+   handle server response and redirect to quiz list on success. */
+
+(function(){
+  // Helper to get CSRF token from cookie (Django recommended)
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  // Elements
+  const list = document.getElementById('questions-list');
+  const saveBtn = document.getElementById('save-order-btn');
+  const statusEl = document.getElementById('save-status');
+
+  if(!list) {
+    console.warn('questions list element not found.');
+    return;
+  }
+
+  // Drag & Drop handlers
+  let dragEl = null;
+
+  function onDragStart(e){
+    dragEl = e.currentTarget;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragEl.dataset.qid);
+    dragEl.style.opacity = '0.5';
+  }
+  function onDragEnd(e){
+    if(dragEl) dragEl.style.opacity = '';
+    dragEl = null;
+  }
+  function onDragOver(e){
+    e.preventDefault();
+    const target = e.target.closest('.list-group-item');
+    if(!target || target === dragEl) return;
+    const rect = target.getBoundingClientRect();
+    const after = (e.clientY - rect.top) > (rect.height / 2);
+    if(after){
+      target.parentNode.insertBefore(dragEl, target.nextSibling);
+    } else {
+      target.parentNode.insertBefore(dragEl, target);
+    }
+  }
+
+  // attach events to current items
+  function attachDragEvents() {
+    const items = list.querySelectorAll('.list-group-item');
+    items.forEach(item=>{
+      item.setAttribute('draggable', 'true');
+      item.addEventListener('dragstart', onDragStart);
+      item.addEventListener('dragend', onDragEnd);
+      item.addEventListener('dragover', onDragOver);
+    });
+  }
+  attachDragEvents();
+
+  // collect current order: array of ints
+  function collectOrder(){
+    const items = Array.from(list.querySelectorAll('.list-group-item'));
+    return items.map(it => parseInt(it.dataset.qid, 10));
+  }
+
+  // POST JSON to reorder endpoint, handle response
+  saveBtn.addEventListener('click', function(){
+    statusEl.innerText = 'Saving...';
+    const order = collectOrder();
+    // Endpoint URL: use Django URL name with template tag
+    const url = "{% url 'create_quiz:reorder_questions' quiz.pk %}";
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken
+      },
+      body: JSON.stringify({order: order})
+    }).then(async res => {
+      if(res.ok){
+        statusEl.innerText = 'Saved. Redirecting...';
+        // redirect back to quiz list after short delay
+        setTimeout(()=> window.location.href = "{% url 'create_quiz:quiz_list' %}", 400);
+        return;
+      }
+      // not ok -> try read body for error
+      let txt = await res.text();
+      console.error('Reorder failed', res.status, txt);
+      try {
+        const j = JSON.parse(txt);
+        statusEl.innerText = 'Error: ' + (j.error || res.status);
+      } catch(e){
+        statusEl.innerText = 'Error saving (status ' + res.status + ')';
+      }
+    }).catch(err=>{
+      console.error('Fetch error', err);
+      statusEl.innerText = 'Network error';
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -72,43 +72,49 @@ class JoinByCodeView(LoginRequiredMixin, View):
 		return redirect('room:detail', code=room.code)
 
 class InviteUserView(LoginRequiredMixin, View):
-	def post(self, request, code):
-		form = InviteForm(request.POST)
-		room = get_object_or_404(Room, code=code)
-		role = user_role_in_room(request.user, room)
-		if role not in (RoomMembership.ROLE_OWNER, RoomMembership.ROLE_ADMIN):
-			return HttpResponseForbidden()
-		if form.is_valid():
-			username = form.cleaned_data['username']
-			invite_role = form.cleaned_data['role']
-			if role == RoomMembership.ROLE_ADMIN and invite_role == 'admin':
-				return HttpResponseForbidden()
-			# find user by username or email
-			try:
-				target = User.objects.get(username=username)
-			except User.DoesNotExist:
-				try:
-					target = User.objects.get(email=username)
-				except User.DoesNotExist:
-					messages.error(request, 'User not found')
-					return redirect('room:detail', code=room.code)
-			if RoomMembership.objects.filter(room=room, user=target).exists():
-				messages.info(request, 'User already member')
-				return redirect('room:detail', code=room.code)
-			inv, created = RoomInvitation.objects.get_or_create(
-				room=room, invited_user=target,
-				defaults={'invited_by': request.user, 'role': invite_role}
-			)
-			if not created:
-				if inv.status == RoomInvitation.STATUS_PENDING:
-					messages.info(request, 'Invitation already pending')
-				else:
-					inv.status = RoomInvitation.STATUS_PENDING
-					inv.invited_by = request.user
-					inv.role = invite_role
-					inv.save()
-			return redirect('room:invitations')
-		return redirect('room:detail', code=room.code)
+    def post(self, request, code):
+        form = InviteForm(request.POST)
+        room = get_object_or_404(Room, code=code)
+        role = user_role_in_room(request.user, room)
+
+        if role not in (RoomMembership.ROLE_OWNER, RoomMembership.ROLE_ADMIN):
+            return HttpResponseForbidden()
+
+        if not form.is_valid():
+            messages.error(request, "Invalid data")
+            return redirect('room:detail', code=room.code)
+
+        username_or_email = form.cleaned_data['username']
+        invite_role = form.cleaned_data['role']  # 'admin' or 'student'
+
+        if role == RoomMembership.ROLE_ADMIN and invite_role == 'admin':
+            return HttpResponseForbidden()
+
+        try:
+            target = User.objects.get(username=username_or_email)
+        except User.DoesNotExist:
+            try:
+                target = User.objects.get(email=username_or_email)
+            except User.DoesNotExist:
+                messages.error(request, 'User not found')
+                return redirect('room:detail', code=room.code)
+
+        if RoomMembership.objects.filter(room=room, user=target).exists():
+            messages.info(request, 'User already a member')
+            return redirect('room:detail', code=room.code)
+
+        inv, created = RoomInvitation.objects.get_or_create(
+            room=room,
+            invited_user=target,
+            defaults={'invited_by': request.user, 'role': invite_role}
+        )
+
+        if created:
+            messages.success(request, f'Invitation sent to {target}')
+        else:
+            messages.info(request, f'Invitation already exists for {target}')
+
+        return redirect('room:detail', code=room.code)
 
 class InvitationResponseView(LoginRequiredMixin, View):
 	def post(self, request, pk, action):

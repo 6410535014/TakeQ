@@ -6,21 +6,20 @@ from django.apps import apps
 User = get_user_model()
 
 class Room(models.Model):
-	code = models.CharField(max_length=12, unique=True, editable=False)
-	name = models.CharField(max_length=255)
-	owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_rooms')
-	created_at = models.DateTimeField(default=timezone.now)
-	description = models.TextField(blank=True)
+    code = models.CharField(max_length=12, unique=True, editable=False)
+    name = models.CharField(max_length=255)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_rooms')
+    created_at = models.DateTimeField(default=timezone.now)
+    description = models.TextField(blank=True)
 
-	def save(self, *args, **kwargs):
-		if not self.code:
-			# generate a short unique code
-			import uuid
-			self.code = uuid.uuid4().hex[:12].upper()
-		super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        if not self.code:
+            import random, string
+            self.code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        super().save(*args, **kwargs)
 
-	def __str__(self):
-		return f"Quiz {self.quiz_id} assigned to {self.room}"
+    def __str__(self):
+        return f"{self.name} ({self.code})"
 
 class RoomMembership(models.Model):
 	ROLE_OWNER = 'owner'
@@ -83,13 +82,15 @@ class RoomInvitation(models.Model):
 		return f"Quiz {self.quiz_id} assigned to {self.room}"
 
 class RoomQuizAssignment(models.Model):
-	room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='assignments')
-	quiz = models.ForeignKey('myapp.Quiz', on_delete=models.CASCADE)
-	assigned_at = models.DateTimeField(default=timezone.now)
-	assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='assignments')
+    quiz = models.ForeignKey('myapp.Quiz', on_delete=models.CASCADE)
+    assigned_at = models.DateTimeField(default=timezone.now)
+    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
-	class Meta:
-		unique_together = ('room', 'quiz_id')
+    class Meta:
+        unique_together = ('room', 'quiz')
 
-	def __str__(self):
-		return f"Quiz {self.quiz_id} assigned to {self.room}"
+    def __str__(self):
+        quiz_title = getattr(self.quiz, 'title', f'#{getattr(self.quiz, "pk", "unknown")}')
+        return f"Quiz {quiz_title} assigned to {self.room}"
+

@@ -28,6 +28,14 @@
             <ul class="navbar-nav">
               {% if user.is_authenticated %}
                 <li class="nav-item"><span class="navbar-text me-2">Hi, {{ user.username }}</span></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'room:invitations' %}">
+                    Invitations
+                    {% if room_invitation_count and room_invitation_count > 0 %}
+                      <span class="badge bg-danger ms-1">{{ room_invitation_count }}</span>
+                    {% endif %}
+                  </a>
+                </li>
                 <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
               {% else %}
                 <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>

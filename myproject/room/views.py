@@ -29,7 +29,7 @@ class CreateRoomView(LoginRequiredMixin, View):
 			room.owner = request.user
 			room.save()
 			RoomMembership.objects.create(room=room, user=request.user, role=RoomMembership.ROLE_OWNER)
-			return redirect('room:detail', code=room.code)
+			return redirect('home')
 		return render(request, 'room/create_room.html', {'form': form})
 
 class RoomDetailView(LoginRequiredMixin, View):

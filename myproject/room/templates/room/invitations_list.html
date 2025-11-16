@@ -1,21 +1,80 @@
 {% extends 'base.html' %}
 
+{% block title %}<title>Your Invitations — TakeQ</title>{% endblock %}
+
 {% block content %}
-<h2>Your Room Invitations</h2>
-<ul>
-{% for inv in invitations %}
-	<li>{{ inv.room }} — role: {{ inv.role }} — status: {{ inv.status }}
-	{% if inv.status == 'pending' %}
-		<form method="post" action="{% url 'room:invitation_response' inv.id 'accept' %}">{% csrf_token %}
-			<button type="submit">Accept</button>
-		</form>
-		<form method="post" action="{% url 'room:invitation_response' inv.id 'decline' %}">{% csrf_token %}
-			<button type="submit">Decline</button>
-		</form>
-	{% endif %}
-	</li>
-{% empty %}
-	<li>No invitations</li>
-{% endfor %}
-</ul>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 mb-0">Room invitations</h2>
+        <a href="{% url 'home' %}" class="btn btn-sm btn-outline-secondary">Back</a>
+      </div>
+
+      {% if invitations %}
+        <div class="list-group">
+          {% for inv in invitations %}
+            <div class="list-group-item list-group-item-action mb-2 shadow-sm">
+              <div class="d-flex w-100 justify-content-between align-items-start">
+                <div class="me-3">
+                  <h5 class="mb-1">
+                    <a href="{% url 'room:detail' inv.room.code %}" class="text-decoration-none">
+                      {{ inv.room.name }} <small class="text-muted">({{ inv.room.code }})</small>
+                    </a>
+                  </h5>
+                  <div class="small text-muted">
+                    Invited by: {{ inv.invited_by }} — Role: <strong>{{ inv.role }}</strong>
+                    {% if inv.created_at %}• {{ inv.created_at|date:"Y-m-d H:i" }}{% endif %}
+                  </div>
+
+                  {% if inv.message %}
+                    <div class="mt-2">{{ inv.message|linebreaksbr }}</div>
+                  {% endif %}
+                </div>
+
+                <div class="text-end">
+                  {% if inv.status == 'pending' %}
+                    <span class="badge bg-warning text-dark mb-2">Pending</span>
+
+                    <div class="d-flex justify-content-end">
+                      <form method="post" action="{% url 'room:invitation_response' inv.id 'accept' %}" class="me-1">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                      </form>
+
+                      <form method="post" action="{% url 'room:invitation_response' inv.id 'decline' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Decline</button>
+                      </form>
+                    </div>
+
+                  {% elif inv.status == 'accepted' %}
+                    <span class="badge bg-success mb-2">Accepted</span>
+                    <div class="small text-muted">You are a member</div>
+
+                  {% elif inv.status == 'declined' %}
+                    <span class="badge bg-secondary mb-2">Declined</span>
+                    <div class="small text-muted">You declined this invitation</div>
+
+                  {% else %}
+                    <span class="badge bg-info mb-2">{{ inv.status }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="card shadow-sm">
+          <div class="card-body text-center">
+            <p class="mb-0">You have no invitations.</p>
+            <small class="text-muted">Owners and admins can invite you to rooms — you’ll see them here.</small>
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
 {% endblock %}

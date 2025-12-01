@@ -33,19 +33,27 @@
           <h5 class="card-title">Admins</h5>
           <ul class="list-group list-group-flush mb-3">
             {% for m in admins %}
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>{{ m.user.username }}</div>
-                <div>
-                  <span class="badge bg-secondary me-2">Admin</span>
-                  {% if role == RoomMembership.ROLE_OWNER %}
-                    <form method="post" action="{% url 'room:remove_member' room.code %}" style="display:inline;">
-                      {% csrf_token %}
-                      <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
-                      <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this admin?');">Remove</button>
-                    </form>
-                  {% endif %}
-                </div>
-              </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>{{ m.user.username }}</div>
+                    <div>
+                    <span class="badge bg-secondary me-2">Admin</span>
+
+                    {% if is_owner %}
+                        <form method="post" action="{% url 'room:change_member_role' room.code %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
+                        <input type="hidden" name="new_role" value="student">
+                        <button type="submit" class="btn btn-sm btn-outline-warning me-1">Demote</button>
+                        </form>
+
+                        <form method="post" action="{% url 'room:remove_member' room.code %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this admin?');">Remove</button>
+                        </form>
+                    {% endif %}
+                    </div>
+                </li>
             {% empty %}
               <li class="list-group-item">No admins</li>
             {% endfor %}
@@ -54,19 +62,33 @@
           <h5 class="card-title">Members</h5>
           <ul class="list-group list-group-flush">
             {% for m in students %}
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>{{ m.user.username }}</div>
-                <div>
-                  <span class="badge bg-light text-dark me-2">Member</span>
-                  {% if role == RoomMembership.ROLE_OWNER or role == RoomMembership.ROLE_ADMIN %}
-                    <form method="post" action="{% url 'room:remove_member' room.code %}" style="display:inline;">
-                      {% csrf_token %}
-                      <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
-                      <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this member?');">Remove</button>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>{{ m.user.username }}</div>
+                    <div>
+                    <span class="badge bg-light text-dark me-2">Member</span>
+
+                    {% if is_owner %}
+                    <form method="post" action="{% url 'room:change_member_role' room.code %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
+                        <input type="hidden" name="new_role" value="admin">
+                        <button type="submit" class="btn btn-sm btn-outline-success me-1">Promote</button>
                     </form>
-                  {% endif %}
-                </div>
-              </li>
+                    <form method="post" action="{% url 'room:remove_member' room.code %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this admin?');">Remove</button>
+                    </form>
+                    {% elif is_admin %}
+                    <form method="post" action="{% url 'room:remove_member' room.code %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this member?');">Remove</button>
+                    </form>
+                    {% endif %}
+
+                    </div>
+                </li>
             {% empty %}
               <li class="list-group-item">No members</li>
             {% endfor %}
@@ -74,7 +96,6 @@
         </div>
       </div>
 
-      {# Invite modal (posts to same ManageMembersView) #}
       <div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
           <div class="modal-content">

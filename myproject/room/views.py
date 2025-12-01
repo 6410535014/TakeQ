@@ -158,22 +158,19 @@ class DeleteRoomView(LoginRequiredMixin, View):
 
 
 class ManageMembersView(LoginRequiredMixin, View):
-    """
-    GET: show members grouped by role, invite form (owner/admin only can invite)
-    POST: handle invite (reuses InviteForm logic)
-    """
     def get(self, request, code):
         room = get_object_or_404(Room, code=code)
         role = user_role_in_room(request.user, room)
 
-        # Query members and group by role
         members_qs = RoomMembership.objects.filter(room=room).select_related('user').order_by('role', 'user__username')
         owners = [m for m in members_qs if m.role == RoomMembership.ROLE_OWNER]
         admins = [m for m in members_qs if m.role == RoomMembership.ROLE_ADMIN]
         students = [m for m in members_qs if m.role == RoomMembership.ROLE_STUDENT]
 
-        # Invite form (only relevant for owner/admin, but safe to include)
         invite_form = InviteForm()
+
+        is_owner = (role == RoomMembership.ROLE_OWNER or role == 'owner')
+        is_admin = (role == RoomMembership.ROLE_ADMIN or role == 'admin')
 
         return render(request, 'room/manage_members.html', {
             'room': room,
@@ -182,14 +179,11 @@ class ManageMembersView(LoginRequiredMixin, View):
             'admins': admins,
             'students': students,
             'invite_form': invite_form,
+            'is_owner': is_owner,
+            'is_admin': is_admin,
         })
 
     def post(self, request, code):
-        """
-        Accept invite submissions from the manage page. Enforce invite permission rules:
-        - owner can invite admin or student
-        - admin can invite student only
-        """
         room = get_object_or_404(Room, code=code)
         role = user_role_in_room(request.user, room)
         if role not in (RoomMembership.ROLE_OWNER, RoomMembership.ROLE_ADMIN):
@@ -201,13 +195,11 @@ class ManageMembersView(LoginRequiredMixin, View):
             return redirect('room:manage_members', code=room.code)
 
         username_or_email = form.cleaned_data['username']
-        invite_role = form.cleaned_data['role']  # 'admin' or 'student'
+        invite_role = form.cleaned_data['role']
 
-        # Admins cannot invite admins
         if role == RoomMembership.ROLE_ADMIN and invite_role == 'admin':
             return HttpResponseForbidden()
 
-        # find user by username or email
         try:
             target = User.objects.get(username=username_or_email)
         except User.DoesNotExist:
@@ -217,12 +209,11 @@ class ManageMembersView(LoginRequiredMixin, View):
                 messages.error(request, 'User not found')
                 return redirect('room:manage_members', code=room.code)
 
-        # prevent inviting existing members
         if RoomMembership.objects.filter(room=room, user=target).exists():
             messages.info(request, 'User already a member')
             return redirect('room:manage_members', code=room.code)
 
-        # create invitation
+
         inv, created = RoomInvitation.objects.get_or_create(
             room=room,
             invited_user=target,
@@ -238,19 +229,12 @@ class ManageMembersView(LoginRequiredMixin, View):
 
 
 class RemoveMemberView(LoginRequiredMixin, View):
-    """
-    POST to remove a member from the room.
-    Permission rules:
-     - owner may remove admins and students, but not themselves.
-     - admin may remove students only.
-    """
     def post(self, request, code):
         room = get_object_or_404(Room, code=code)
         role = user_role_in_room(request.user, room)
         if role not in (RoomMembership.ROLE_OWNER, RoomMembership.ROLE_ADMIN):
             return HttpResponseForbidden()
 
-        # member_user_id expected from form
         member_user_id = request.POST.get('member_user_id')
         if not member_user_id:
             messages.error(request, 'Missing member id')
@@ -268,16 +252,86 @@ class RemoveMemberView(LoginRequiredMixin, View):
             messages.error(request, 'User is not a member')
             return redirect('room:manage_members', code=room.code)
 
-        # cannot remove the owner
         if membership.role == RoomMembership.ROLE_OWNER:
             messages.error(request, 'Cannot remove the owner')
             return redirect('room:manage_members', code=room.code)
 
-        # admin can only remove students
         if role == RoomMembership.ROLE_ADMIN and membership.role != RoomMembership.ROLE_STUDENT:
             return HttpResponseForbidden()
 
-        # proceed to delete membership
         membership.delete()
         messages.success(request, f'{member_user.username} removed from the room')
+        return redirect('room:manage_members', code=room.code)
+
+class ChangeMemberRoleView(LoginRequiredMixin, View):
+    def post(self, request, code):
+        room = get_object_or_404(Room, code=code)
+        actor_role = user_role_in_room(request.user, room)
+        if actor_role != RoomMembership.ROLE_OWNER:
+            return HttpResponseForbidden()
+
+        member_user_id = request.POST.get('member_user_id')
+        new_role = request.POST.get('new_role')  # expected 'admin' or 'student'
+        if not member_user_id or new_role not in ('admin', 'student'):
+            messages.error(request, 'Invalid request')
+            return redirect('room:manage_members', code=room.code)
+
+        try:
+            target = User.objects.get(pk=int(member_user_id))
+        except User.DoesNotExist:
+            messages.error(request, 'User not found')
+            return redirect('room:manage_members', code=room.code)
+
+        try:
+            membership = RoomMembership.objects.get(room=room, user=target)
+        except RoomMembership.DoesNotExist:
+            messages.error(request, 'User is not a member of this room')
+            return redirect('room:manage_members', code=room.code)
+
+        if target == room.owner:
+            messages.error(request, 'Cannot change owner role')
+            return redirect('room:manage_members', code=room.code)
+
+        if new_role == 'admin':
+            membership.role = RoomMembership.ROLE_ADMIN
+        else:
+            membership.role = RoomMembership.ROLE_STUDENT
+        membership.save()
+        messages.success(request, f'{target.username} is now {new_role}')
+        return redirect('room:manage_members', code=room.code)
+
+
+class RemoveMemberView(LoginRequiredMixin, View):
+    def post(self, request, code):
+        room = get_object_or_404(Room, code=code)
+        actor_role = user_role_in_room(request.user, room)
+        if actor_role not in (RoomMembership.ROLE_OWNER, RoomMembership.ROLE_ADMIN):
+            return HttpResponseForbidden()
+
+        member_user_id = request.POST.get('member_user_id')
+        if not member_user_id:
+            messages.error(request, 'Missing member id')
+            return redirect('room:manage_members', code=room.code)
+
+        try:
+            target = User.objects.get(pk=int(member_user_id))
+        except User.DoesNotExist:
+            messages.error(request, 'User not found')
+            return redirect('room:manage_members', code=room.code)
+
+        try:
+            membership = RoomMembership.objects.get(room=room, user=target)
+        except RoomMembership.DoesNotExist:
+            messages.error(request, 'User is not a member')
+            return redirect('room:manage_members', code=room.code)
+
+        if membership.role == RoomMembership.ROLE_OWNER:
+            messages.error(request, 'Cannot remove the owner')
+            return redirect('room:manage_members', code=room.code)
+
+        if actor_role == RoomMembership.ROLE_ADMIN and membership.role != RoomMembership.ROLE_STUDENT:
+            return HttpResponseForbidden()
+
+        membership.delete()
+        messages.success(request, f'{target.username} removed from the room')
         return redirect('room:manage_members', code=room.code)

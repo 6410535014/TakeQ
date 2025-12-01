@@ -121,15 +121,6 @@
 
   <hr/>
 
-  <h3>Members</h3>
-  <ul class="list-group mb-3">
-    {% for m in members %}
-      <li class="list-group-item">{{ m.user }} — {{ m.role }}</li>
-    {% empty %}
-      <li class="list-group-item">No members</li>
-    {% endfor %}
-  </ul>
-
 </div>
 
 <div class="modal fade" id="inviteUserModal" tabindex="-1" aria-labelledby="inviteUserModalLabel" aria-hidden="true">

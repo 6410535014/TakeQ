@@ -1,44 +1,34 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
+from django.contrib.auth import login, logout
 from django.contrib import messages
+from django.contrib.auth import get_user_model
+from .forms import StyledAuthenticationForm, StyledUserCreationForm
+
+User = get_user_model()
+
+def login_view(request):
+    next_url = request.GET.get("next") or request.POST.get("next")
+    if request.method == "POST":
+        form = StyledAuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect(next_url or "home")
+    else:
+        form = StyledAuthenticationForm(request)
+    return render(request, "auth/login.html", {"form": form, "next": next_url})
+
 
 def register_view(request):
     if request.method == "POST":
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        password = request.POST.get("password")
-        confirm = request.POST.get("confirm")
-
-        if password != confirm:
-            messages.error(request, "Passwords do not match.")
-            return redirect("register")
-
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Username already taken.")
-            return redirect("register")
-
-        User.objects.create_user(username=username, email=email, password=password)
-        messages.success(request, "Registration successful. Please log in.")
-        return redirect("login")
-
-    return render(request, "auth/register.html")
-
-
-def login_view(request):
-    if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect("home")
-        else:
-            messages.error(request, "Invalid username or password.")
+        form = StyledUserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Registration successful. Please log in.")
             return redirect("login")
-
-    return render(request, "auth/login.html")
+    else:
+        form = StyledUserCreationForm()
+    return render(request, "auth/register.html", {"form": form})
 
 
 def logout_view(request):

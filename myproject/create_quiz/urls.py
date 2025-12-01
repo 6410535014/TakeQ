@@ -6,6 +6,7 @@ app_name = "create_quiz"
 urlpatterns = [
 	path("", views.QuizListView.as_view(), name="quiz_list"),
 	path("create/", views.QuizCreateView.as_view(), name="quiz_create"),
+    path("create/<str:room_code>/", views.QuizCreateView.as_view(), name="quiz_create_for_room"),
 	path("<int:pk>/edit/", views.QuizUpdateView.as_view(), name="quiz_edit"),
 	path("<int:pk>/detail/", views.QuizDetailView.as_view(), name="quiz_detail"),
 	path("<int:quiz_id>/questions/add/", views.add_question, name="add_question"),

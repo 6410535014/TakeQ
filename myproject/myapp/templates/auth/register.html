@@ -1,29 +1,74 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}
-    <title>Register</title>
-{% endblock %}
+{% block title %}<title>Register — TakeQ</title>{% endblock %}
 
 {% block content %}
-<h2>Create an Account</h2>
-<form method="post">
-  {% csrf_token %}
-  <label>Username</label>
-  <input type="text" name="username" required>
-  <label>Email</label>
-  <input type="email" name="email">
-  <label>Password</label>
-  <input type="password" name="password" required>
-  <label>Confirm Password</label>
-  <input type="password" name="confirm" required>
-  <button type="submit">Register</button>
-</form>
-<p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
-{% if messages %}
-  <ul>
-  {% for message in messages %}
-    <li>{{ message }}</li>
-  {% endfor %}
-  </ul>
-{% endif %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-sm-10 col-md-8 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h4 class="card-title mb-3">Create an account</h4>
+          <p class="text-muted small mb-4">Create an account to manage rooms and quizzes.</p>
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {% for err in form.non_field_errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+              {{ form.username }}
+              {% for err in form.username.errors %}
+                <div class="invalid-feedback d-block">{{ err }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+              {{ form.username }}
+              {% for err in form.email.errors %}
+                <div class="invalid-feedback d-block">{{ err }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.password1.id_for_label }}">Password</label>
+              {{ form.username }}
+              {% for err in form.password1.errors %}
+                <div class="invalid-feedback d-block">{{ err }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
+              {{ form.username }}
+              {% for err in form.password2.errors %}
+                <div class="invalid-feedback d-block">{{ err }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">Create account</button>
+            </div>
+          </form>
+
+          <hr class="my-4">
+
+          <div class="text-center small">
+            Already have an account? <a href="{% url 'login' %}">Sign in</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-3 small text-muted">
+        We’ll never share your email with anyone else.
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

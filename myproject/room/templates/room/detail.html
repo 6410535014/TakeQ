@@ -7,27 +7,25 @@
 
     <div>
       {% if request.user == room.owner or role == 'owner' or role == 'admin' %}
-        <a href="{% url 'create_quiz:quiz_create' %}?next={{ request.path }}" class="btn btn-primary btn-sm me-2">สร้าง quiz ใหม่</a>
-        
-        <button type="button"
-          class="btn btn-outline-primary btn-sm me-2"
-          data-bs-toggle="modal"
-          data-bs-target="#inviteUserModal">
-          เชิญสมาชิก
-        </button>
+        <a href="{% url 'room:manage_members' room.code %}" class="btn btn-outline-primary btn-sm me-2">จัดการสมาชิก</a>
+      {% else %}
+        <a href="{% url 'room:manage_members' room.code %}" class="btn btn-outline-secondary btn-sm me-2">สมาชิก</a>
+      {% endif %}
 
-        {% if request.user == room.owner or role == 'owner' %}
-          <form method="post" action="{% url 'room:delete' room.code %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this room? This action cannot be undone.');">ลบห้อง</button>
-          </form>
-        {% endif %}
+      {% if request.user == room.owner or role == 'owner' or role == 'admin' %}
+        <a href="{% url 'create_quiz:quiz_create_for_room' room.code %}" class="btn btn-primary btn-sm">สร้าง quiz ใหม่</a>
+
+
+        <form method="post" action="{% url 'room:delete' room.code %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this room? This action cannot be undone.');">ลบห้อง</button>
+        </form>
       {% endif %}
     </div>
   </div>
 
+
   <p>{{ room.description }}</p>
-  <p>Owner: {{ room.owner }}</p>
 
   <hr/>
 
@@ -122,15 +120,6 @@
   {% endif %}
 
   <hr/>
-
-  <h3>Members</h3>
-  <ul class="list-group mb-3">
-    {% for m in members %}
-      <li class="list-group-item">{{ m.user }} — {{ m.role }}</li>
-    {% empty %}
-      <li class="list-group-item">No members</li>
-    {% endfor %}
-  </ul>
 
 </div>
 

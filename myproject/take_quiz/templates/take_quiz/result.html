@@ -33,5 +33,10 @@
   {% endfor %}
 </ul>
 
-<a class="btn btn-secondary mt-3" href="{% url 'take_quiz:quiz_list' %}">Back to quizzes</a>
+{% if attempt.room_code %}
+    <a href="{% url 'room:detail' attempt.room_code %}" class="btn btn-secondary">Back to room</a>
+{% else %}
+    <a href="{% url 'take_quiz:quiz_list' %}" class="btn btn-secondary">Back to quizzes</a>
+{% endif %}
+
 {% endblock %}

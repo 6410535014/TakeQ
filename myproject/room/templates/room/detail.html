@@ -110,7 +110,11 @@
           </div>
 
           <div>
-            <a href="{% url 'take_quiz:start_quiz' q.pk %}" class="btn btn-primary btn-sm">เริ่มทำ</a>
+            {% if quiz.pk %}
+              <a href="{% url 'take_quiz:start_quiz' quiz.pk %}?room={{ room.code }}">Start</a>
+            {% else %}
+              <button class="btn btn-secondary" disabled>Done</button>
+            {% endif %}
           </div>
         </li>
       {% empty %}

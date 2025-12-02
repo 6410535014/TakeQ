@@ -33,20 +33,20 @@ class QuizListView(ListView):
 def start_quiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, pk=quiz_id, is_published=True)
 
-    existing = Attempt.objects.filter(quiz=quiz, taker=request.user).order_by('-started_at').first()
+    room_code = request.GET.get("room") or request.POST.get("room")
+    
+    existing = Attempt.objects.filter(quiz=quiz, taker=request.user).first()
     if existing:
-        messages.info(request, "You have already taken this quiz. Showing your result.")
         return redirect("take_quiz:attempt_result", attempt_id=existing.id)
-    try:
-        attempt = Attempt.objects.create(quiz=quiz, taker=request.user, started_at=timezone.now())
-    except IntegrityError:
-        existing = Attempt.objects.filter(quiz=quiz, taker=request.user).order_by('-started_at').first()
-        if existing:
-            return redirect("take_quiz:attempt_result", attempt_id=existing.id)
-        messages.error(request, "Could not start quiz. Please try again.")
-        return redirect("take_quiz:quiz_list")
 
-    return redirect(reverse("take_quiz:take_quiz", args=[quiz.id, attempt.id]))
+    attempt = Attempt.objects.create(
+        quiz=quiz,
+        taker=request.user,
+        started_at=timezone.now(),
+        room_code=room_code
+    )
+
+    return redirect("take_quiz:take_quiz", quiz_id=quiz.id, attempt_id=attempt.id)
 
 
 @login_required

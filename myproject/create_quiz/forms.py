@@ -9,6 +9,20 @@ class QuizForm(forms.ModelForm):
         model = Quiz
         fields = ["title", "description", "time_limit_minutes"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'title' in self.fields:
+            self.fields['title'].widget.attrs.update({
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Enter quiz title',
+            })
+        if 'description' in self.fields:
+            self.fields['description'].widget.attrs.update({
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Short description (optional)',
+            })
+
 class QuestionForm(forms.ModelForm):
     qtype = forms.ChoiceField(choices=QTYPE_CHOICES, initial="short", required=True)
 

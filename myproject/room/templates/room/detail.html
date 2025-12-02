@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load dict_filters %}
+
 {% block content %}
 <div class="container py-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
@@ -110,11 +112,24 @@
           </div>
 
           <div>
-            {% if quiz.pk %}
-              <a href="{% url 'take_quiz:start_quiz' quiz.pk %}?room={{ room.code }}">Start</a>
-            {% else %}
-              <button class="btn btn-secondary" disabled>Done</button>
-            {% endif %}
+            {# use q (not a.quiz) because this loop yields Quiz objects #}
+            {% with the_quiz=q %}
+              {% if the_quiz and the_quiz.pk %}
+                {% if the_quiz.pk in attempted_quiz_ids %}
+                  <a class="btn btn-secondary btn-sm"
+                    href="{% url 'take_quiz:attempt_result' attempt_map|dict_get:the_quiz.pk %}">
+                    ผลลัพธ์
+                  </a>
+                {% else %}
+                  <a class="btn btn-primary btn-sm"
+                    href="{% url 'take_quiz:start_quiz' the_quiz.pk %}?room={{ room.code }}">
+                    Start
+                  </a>
+                {% endif %}
+              {% else %}
+                <button class="btn btn-secondary btn-sm" disabled>Unavailable</button>
+              {% endif %}
+            {% endwith %}
           </div>
         </li>
       {% empty %}

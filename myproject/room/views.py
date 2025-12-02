@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from myapp.models import Quiz
 from django.utils import timezone
+from myapp.models import Attempt
 
 User = get_user_model()
 
@@ -49,6 +50,9 @@ class RoomDetailView(LoginRequiredMixin, View):
             owner_quizzes = Quiz.objects.filter(creator=request.user).exclude(pk__in=assigned_ids).order_by('-created_at')
 
         visible_assigned_for_students = assigned_quizzes.filter(is_published=True) if not (role in (RoomMembership.ROLE_OWNER, RoomMembership.ROLE_ADMIN)) else assigned_quizzes
+        attempts = Attempt.objects.filter(taker=request.user)
+        attempt_map = {a.quiz_id: a.id for a in attempts}
+        attempted_quiz_ids = list(attempt_map.keys())
 
         return render(request, 'room/detail.html', {
             'room': room,
@@ -58,6 +62,8 @@ class RoomDetailView(LoginRequiredMixin, View):
             'assigned_quizzes': assigned_quizzes,
             'owner_quizzes': owner_quizzes,
             'visible_assigned_for_students': visible_assigned_for_students,
+            'attempt_map': attempt_map,
+            'attempted_quiz_ids': attempted_quiz_ids,
         })
 
 class JoinByCodeView(LoginRequiredMixin, View):

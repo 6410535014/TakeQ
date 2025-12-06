@@ -80,8 +80,9 @@ def submit_quiz(request, attempt_id):
     if attempt.finished_at:
         return redirect("take_quiz:attempt_result", attempt_id=attempt.id)
 
-    questions = quiz.questions.all().order_by("order", "id").prefetch_related("choices")
+    auto_submitted = bool(request.POST.get("auto_submitted"))
 
+    questions = quiz.questions.all().order_by("order", "id").prefetch_related("choices")
     correct_count = 0
     total_questions = questions.count()
 
@@ -104,7 +105,7 @@ def submit_quiz(request, attempt_id):
                 selected_choice=selected_choice,
                 text=""
             )
-            if selected_choice and selected_choice.is_correct:
+            if selected_choice and getattr(selected_choice, "is_correct", False):
                 correct_count += 1
         else:
             text_ans = request.POST.get(field_name, "").strip()
@@ -121,13 +122,24 @@ def submit_quiz(request, attempt_id):
     else:
         score = None
 
+    now = timezone.now()
     if quiz.time_limit_minutes:
         deadline = attempt.started_at + timedelta(minutes=quiz.time_limit_minutes)
-        if timezone.now() > deadline:
-            messages.error(request, "Time limit exceeded — submission not accepted.")
-            return redirect('take_quiz:attempt_result', attempt_id=attempt.id)
-        
-    attempt.finished_at = timezone.now()
+        if now > deadline:
+            if auto_submitted:
+                attempt.finished_at = now
+                attempt.score = score
+                attempt.save()
+                messages.info(request, "Your answers were auto-submitted at the deadline.")
+                return redirect("take_quiz:attempt_result", attempt_id=attempt.id)
+            else:
+                attempt.finished_at = now
+                attempt.score = None
+                attempt.save()
+                messages.error(request, "Time limit exceeded — submission not accepted.")
+                return redirect('take_quiz:attempt_result', attempt_id=attempt.id)
+
+    attempt.finished_at = now
     attempt.score = score
     attempt.save()
 

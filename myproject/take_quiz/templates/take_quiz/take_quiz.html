@@ -61,9 +61,85 @@
 {% endif %}
 
 
+<script>
+(function(){
+  const startedAtStr = "{{ attempt.started_at|date:'c' }}";
+  const minutes = Number("{{ quiz.time_limit_minutes|default:'0' }}");
+  const timerEl = document.getElementById('quiz-timer');
+  const form = document.getElementById('quiz-form');
+
+  if (!startedAtStr || !minutes || !timerEl || !form) {
+    if (timerEl) timerEl.textContent = '';
+    return;
+  }
+
+  const startDate = new Date(startedAtStr);
+  const endDate = new Date(startDate.getTime() + minutes * 60 * 1000);
+
+  function formatRemaining(ms) {
+    if (ms <= 0) return "00:00";
+    const totalSec = Math.floor(ms / 1000);
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    return String(mins).padStart(2,'0') + ":" + String(secs).padStart(2,'0');
+  }
+
+  function tick() {
+    const now = new Date();
+    const remaining = endDate - now;
+    if (remaining <= 0) {
+      timerEl.textContent = "Time's up (00:00)";
+      timerEl.classList.add('text-muted');
+
+      autoSubmit();
+      clearInterval(intervalId);
+      return;
+    }
+    timerEl.textContent = "Time left: " + formatRemaining(remaining);
+  }
+
+  let autoSubmitted = false;
+  function autoSubmit() {
+    if (autoSubmitted) return;
+    autoSubmitted = true;
+
+    Array.from(form.elements).forEach(el => el.disabled = true);
+
+    let hidden = form.querySelector('input[name="auto_submitted"]');
+    if (!hidden) {
+      hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'auto_submitted';
+      hidden.value = '1';
+      form.appendChild(hidden);
+    } else {
+      hidden.value = '1';
+    }
+
+    timerEl.textContent = 'Auto-submitting...';
+    setTimeout(()=> {
+      try { form.submit(); } catch(e) { console.error('Auto-submit failed', e); }
+    }, 100);
+  }
+
+  const msUntilEnd = endDate - new Date();
+  if (msUntilEnd > 0 && msUntilEnd < 2147483647) {
+    setTimeout(autoSubmit, msUntilEnd + 50);
+  }
+
+  tick();
+  const intervalId = setInterval(tick, 1000);
+})();
+</script>
+
+
 <p>{{ quiz.description }}</p>
 
-<form method="post" action="{% url 'take_quiz:submit_quiz' attempt.id %}">
+<form id="quiz-form"
+      method="post"
+      action="{% url 'take_quiz:submit_quiz' attempt.id %}"
+      data-started-at="{{ attempt.started_at|date:'c' }}"
+      data-time-limit="{{ quiz.time_limit_minutes|default:0 }}">
   {% csrf_token %}
 
   {% for q in questions %}
@@ -109,4 +185,149 @@
     <button class="btn btn-success" type="submit">Submit</button>
   </div>
 </form>
+
+
+<script>
+(function () {
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return v ? decodeURIComponent(v.pop()) : null;
+  }
+
+  const form = document.getElementById('quiz-form');
+  const timerEl = document.getElementById('quiz-timer');
+  if (!form) {
+    console.error('Auto-submit: form #quiz-form not found.');
+    return;
+  }
+
+  const startedAtStr = form.getAttribute('data-started-at') || '';
+  const minutesStr = form.getAttribute('data-time-limit') || '0';
+  const minutes = Number(minutesStr) || 0;
+  if (!startedAtStr || !minutes) {
+    if (timerEl) timerEl.textContent = '';
+    return;
+  }
+
+  const startDate = new Date(startedAtStr);
+  if (isNaN(startDate.getTime())) {
+    console.error('Auto-submit: invalid started_at:', startedAtStr);
+    return;
+  }
+
+  const endDate = new Date(startDate.getTime() + minutes * 60 * 1000);
+
+  function formatRemaining(ms) {
+    if (ms <= 0) return "00:00";
+    const totalSec = Math.floor(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+
+  function updateTimer() {
+    if (!timerEl) return;
+    const rem = endDate - new Date();
+    if (rem <= 0) {
+      timerEl.textContent = "Time left: 00:00";
+    } else {
+      timerEl.textContent = "Time left: " + formatRemaining(rem);
+    }
+  }
+
+let autoSubmittedFlag = false;
+function autoSubmit() {
+  if (autoSubmittedFlag) return;
+  autoSubmittedFlag = true;
+
+  let csrfToken = null;
+  const csrfInput = form.querySelector('input[name="csrfmiddlewaretoken"]');
+  if (csrfInput && csrfInput.value) {
+    csrfToken = csrfInput.value;
+  } else {
+    csrfToken = getCookie('csrftoken');
+  }
+
+  let hidden = form.querySelector('input[name="auto_submitted"]');
+  if (!hidden) {
+    hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'auto_submitted';
+    hidden.value = '1';
+    form.appendChild(hidden);
+  } else {
+    hidden.value = '1';
+  }
+
+  try {
+    Array.from(form.elements).forEach(el => {
+      const name = el.getAttribute && el.getAttribute('name');
+      const type = el.type || '';
+      if (name === 'csrfmiddlewaretoken' || name === 'auto_submitted') {
+        el.disabled = false;
+        return;
+      }
+      el.disabled = true;
+    });
+  } catch (e) {
+    console.warn('Auto-submit: disabling elements failed', e);
+  }
+
+  if (timerEl) timerEl.textContent = 'Auto-submitting...';
+
+  try {
+    form.submit();
+    return;
+  } catch (err) {
+    console.warn('form.submit() failed, falling back to fetch:', err);
+  }
+
+  try {
+    const action = form.getAttribute('action') || window.location.href;
+    const method = (form.getAttribute('method') || 'POST').toUpperCase();
+    const fd = new FormData(form);
+    const headers = {};
+    if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+    fetch(action, {
+      method,
+      headers,
+      body: fd,
+      credentials: 'same-origin'
+    }).then(resp => {
+      if (resp.redirected) {
+        window.location = resp.url;
+      } else {
+        resp.text().then(t => {
+          document.open();
+          document.write(t);
+          document.close();
+        });
+      }
+    }).catch(e => console.error('Auto-submit fetch failed', e));
+  } catch (e) {
+    console.error('Auto-submit fallback failed', e);
+  }
+}
+
+
+  const msUntilEnd = endDate - new Date();
+  if (msUntilEnd <= 0) { autoSubmit(); return; }
+
+  updateTimer();
+  const interval = setInterval(updateTimer, 1000);
+
+  try {
+    setTimeout(() => { clearInterval(interval); autoSubmit(); }, msUntilEnd + 30);
+  } catch (e) {
+    const poll = setInterval(() => {
+      if (new Date() >= endDate) { clearInterval(poll); clearInterval(interval); autoSubmit(); }
+    }, 500);
+  }
+
+  window.addEventListener('beforeunload', function () {
+    if (!submitted && new Date() >= endDate) {}
+  });
+})();
+</script>
+
 {% endblock %}

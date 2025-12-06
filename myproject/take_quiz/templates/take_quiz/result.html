@@ -27,7 +27,7 @@
           <span class="badge bg-danger">Wrong</span>
         {% endif %}
       {% else %}
-        <strong>Your answer (text):</strong> {{ a.text|default:"(no answer)" }}
+        <strong>Your answer:</strong> {{ a.text|default:"(no answer)" }}
       {% endif %}
     </li>
   {% endfor %}

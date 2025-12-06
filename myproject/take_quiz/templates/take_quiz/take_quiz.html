@@ -4,6 +4,63 @@
 
 {% block content %}
 <h2>{{ quiz.title }}</h2>
+
+{% if quiz.time_limit_minutes %}
+  <div class="mb-3 d-flex align-items-center gap-3">
+    <span class="badge bg-info text-dark">
+      Time limit: {{ quiz.time_limit_minutes }} minute{% if quiz.time_limit_minutes != 1 %}s{% endif %}
+    </span>
+
+    <div id="quiz-timer" class="fw-semibold text-danger">Loading timer...</div>
+  </div>
+
+  <script>
+  (function(){
+    const startedAtStr = "{{ attempt.started_at|date:'c' }}";
+
+    const minutes = Number("{{ quiz.time_limit_minutes|default:'0' }}");
+
+    if (!startedAtStr || !minutes) {
+      const el = document.getElementById('quiz-timer');
+      if (el) el.textContent = '';
+      return;
+    }
+
+    const startDate = new Date(startedAtStr);
+    const endDate = new Date(startDate.getTime() + minutes * 60 * 1000);
+
+    const timerEl = document.getElementById('quiz-timer');
+
+    function formatRemaining(ms) {
+      if (ms <= 0) return "00:00";
+      const totalSec = Math.floor(ms / 1000);
+      const mins = Math.floor(totalSec / 60);
+      const secs = totalSec % 60;
+      return String(mins).padStart(2,'0') + ":" + String(secs).padStart(2,'0');
+    }
+
+    function tick() {
+      const now = new Date();
+      const remaining = endDate - now;
+      if (remaining <= 0) {
+        timerEl.textContent = "Time's up (00:00)";
+        const form = document.getElementById('quiz-form');
+        if (form) {
+          timerEl.classList.add('text-muted');
+        }
+        clearInterval(intervalId);
+        return;
+      }
+      timerEl.textContent = "Time left: " + formatRemaining(remaining);
+    }
+
+    tick();
+    const intervalId = setInterval(tick, 1000);
+  })();
+  </script>
+{% endif %}
+
+
 <p>{{ quiz.description }}</p>
 
 <form method="post" action="{% url 'take_quiz:submit_quiz' attempt.id %}">

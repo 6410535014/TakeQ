@@ -11,6 +11,14 @@
     </div>
   </div>
 
+  {% if quiz.time_limit_minutes %}
+    <div class="mt-2">
+      <span class="badge bg-info text-dark">
+        Time limit: {{ quiz.time_limit_minutes }} minute{% if quiz.time_limit_minutes != 1 %}s{% endif %}
+      </span>
+    </div>
+  {% endif %}
+
   <p class="text-muted">{{ quiz.description }}</p>
 
   <hr>

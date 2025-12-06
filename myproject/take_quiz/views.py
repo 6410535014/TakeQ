@@ -7,6 +7,8 @@ from django.utils.decorators import method_decorator
 from myapp.models import Quiz, Choice, Attempt, Answer
 from django.contrib import messages
 from django.db import transaction, IntegrityError
+from datetime import timedelta
+from django.http import HttpResponseForbidden
 
 @method_decorator(login_required, name='dispatch')
 class QuizListView(ListView):
@@ -119,6 +121,12 @@ def submit_quiz(request, attempt_id):
     else:
         score = None
 
+    if quiz.time_limit_minutes:
+        deadline = attempt.started_at + timedelta(minutes=quiz.time_limit_minutes)
+        if timezone.now() > deadline:
+            messages.error(request, "Time limit exceeded — submission not accepted.")
+            return redirect('take_quiz:attempt_result', attempt_id=attempt.id)
+        
     attempt.finished_at = timezone.now()
     attempt.score = score
     attempt.save()

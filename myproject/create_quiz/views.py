@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 from room.models import RoomQuizAssignment, RoomMembership
 from django.contrib.auth import get_user_model
 from django.apps import apps
+from django.contrib import messages
 
 User = get_user_model()
 
@@ -100,12 +101,6 @@ class QuizDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 @login_required
 def add_question(request, quiz_id):
-    """
-    Robust add-question view:
-    - make a mutable copy of POST and fill defaults (order, qtype) so QuestionForm validates
-    - always use prefix "choice_set" for Choice formset binding
-    - when formset invalid, attach formset.non_form_errors into qform non-field errors for reliable display
-    """
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     if not (quiz.creator == request.user or user_is_room_owner_or_admin_for_quiz(request.user, quiz)):
         return HttpResponseForbidden()
@@ -269,10 +264,6 @@ def toggle_publish(request, pk):
 @login_required
 @require_POST
 def reorder_questions(request, quiz_id):
-    """
-    Expect JSON body: {"order": [question_id_3, question_id_1, question_id_2, ...]}
-    Only quiz.creator can reorder.
-    """
     import json
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     if not (quiz.creator == request.user or user_is_room_owner_or_admin_for_quiz(request.user, quiz)):
@@ -296,3 +287,18 @@ def reorder_questions(request, quiz_id):
             Question.objects.filter(pk=qid, quiz=quiz).update(order=idx)
 
     return JsonResponse({"ok": True})
+
+def delete_question(request, pk):
+    if request.method != "POST":
+        return redirect('create_quiz:quiz_list')
+
+    question = get_object_or_404(Question, pk=pk)
+    quiz = question.quiz
+
+    if not (quiz.creator == request.user or user_is_room_owner_or_admin_for_quiz(request.user, quiz)):
+        return HttpResponseForbidden()
+
+    question.delete()
+    messages.success(request, "Question deleted.")
+
+    return redirect('create_quiz:quiz_detail', pk=quiz.pk)

@@ -33,8 +33,17 @@
           <span class="drag-handle me-2" style="cursor:grab">☰</span>
           <strong>Q{{ q.order }}.</strong> {{ q.text }}
         </div>
-        <div>
+        <div class="d-flex gap-1">
           <a class="btn btn-sm btn-secondary" href="{% url 'create_quiz:edit_question' q.pk %}">Edit</a>
+
+          <form method="post" action="{% url 'create_quiz:delete_question' q.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit"
+                    class="btn btn-sm btn-outline-danger"
+                    onclick="return confirm('Delete this question? This action cannot be undone.');">
+              Delete
+            </button>
+          </form>
         </div>
       </div>
     {% empty %}

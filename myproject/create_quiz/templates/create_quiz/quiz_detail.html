@@ -142,7 +142,7 @@
     }).then(async res => {
       if(res.ok){
         statusEl.innerText = 'Saved. Redirecting...';
-        setTimeout(()=> window.location.href = "{% url 'create_quiz:quiz_list' %}", 400);
+        setTimeout(()=> window.location.href = "{% url 'room:detail' room_code %}", 400);
         return;
       }
       let txt = await res.text();

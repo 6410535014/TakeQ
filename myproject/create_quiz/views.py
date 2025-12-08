@@ -47,15 +47,46 @@ class QuizCreateView(CreateView):
     form_class = QuizForm
     template_name = "create_quiz/quiz_form.html"
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        room_code = self.request.GET.get('room') or self.request.session.get('last_room_for_quiz_new')
+        ctx['room_code'] = room_code
+        return ctx
+
     def form_valid(self, form):
         obj = form.save(commit=False)
         obj.creator = self.request.user
         obj.is_published = False
         obj.save()
+
+        room_code = (
+            self.request.GET.get('room')
+            or self.request.POST.get('room')
+            or self.request.session.get('last_room_for_quiz_new')
+        )
+
+        if room_code:
+            self.request.session[f"last_room_for_quiz_{obj.pk}"] = room_code
+            if 'last_room_for_quiz_new' in self.request.session:
+                try:
+                    del self.request.session['last_room_for_quiz_new']
+                except KeyError:
+                    pass
+
+            detail_url = reverse("create_quiz:quiz_detail", args=[obj.pk])
+            return redirect(f"{detail_url}?room={room_code}")
+
         next_url = self.request.GET.get('next') or self.request.POST.get('next')
         if next_url:
             return redirect(next_url)
         return redirect("create_quiz:quiz_detail", pk=obj.pk)
+
+    def form_invalid(self, form):
+        room_code = self.request.GET.get('room') or self.request.POST.get('room')
+        if room_code:
+            self.request.session['last_room_for_quiz_new'] = room_code
+        return super().form_invalid(form)
+
 
 @method_decorator(login_required, name="dispatch")
 class QuizUpdateView(UpdateView):

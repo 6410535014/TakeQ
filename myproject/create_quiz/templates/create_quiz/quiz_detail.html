@@ -7,6 +7,7 @@
     <h2>{{ quiz.title }}</h2>
     <div>
       <a class="btn btn-outline-info" href="{% url 'create_quiz:add_question' quiz.pk %}">Add Question</a>
+      <a class="btn btn-outline-success" href="{% url 'create_quiz:quiz_attempts' quiz.pk %}">View attempts</a>
       <a class="btn btn-outline-secondary" href="{% url 'room:detail' room_code %}">Back</a>
     </div>
   </div>
@@ -22,11 +23,6 @@
   <p class="text-muted">{{ quiz.description }}</p>
 
   <hr>
-
-    {% if request.user == quiz.creator or is_room_admin %}
-      <a href="{% url 'create_quiz:quiz_attempts' quiz.pk %}" class="btn btn-outline-secondary btn-sm ms-2">View attempts</a>
-      <hr>
-    {% endif %}
 
   <h4>Questions</h4>
 

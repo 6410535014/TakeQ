@@ -15,7 +15,7 @@
       {% endif %}
 
       {% if request.user == room.owner or role == 'owner' or role == 'admin' %}
-        <a href="{% url 'create_quiz:quiz_create_for_room' room.code %}" class="btn btn-primary btn-sm">สร้าง quiz ใหม่</a>
+        <a href="{% url 'create_quiz:quiz_create_for_room' room.code %}?room={{ room.code }}" class="btn btn-primary btn-sm">สร้าง quiz ใหม่</a>
 
 
         <form method="post" action="{% url 'room:delete' room.code %}" style="display:inline;">
@@ -51,8 +51,8 @@
           </div>
 
           <div>
-            <a href="{% url 'create_quiz:quiz_detail' q.pk %}" class="btn btn-outline-primary btn-sm me-1">ดู</a>
-            <a href="{% url 'create_quiz:quiz_edit' q.pk %}" class="btn btn-outline-secondary btn-sm me-1">แก้ไข</a>
+            <a href="{% url 'create_quiz:quiz_detail' q.pk %}?room={{ room.code }}" class="btn btn-outline-primary btn-sm">ดู</a>
+            <a href="{% url 'create_quiz:quiz_edit' q.pk %}?room={{ room.code }}" class="btn btn-outline-secondary btn-sm">แก้ไข</a>
 
             <form method="post" action="{% url 'create_quiz:toggle_publish' q.pk %}" style="display:inline;">
               {% csrf_token %}

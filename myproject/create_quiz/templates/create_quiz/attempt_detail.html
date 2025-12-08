@@ -4,7 +4,7 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Answers — {{ quiz.title }}</h3>
     <div>
-      <a href="{% url 'create_quiz:quiz_attempts' quiz.pk %}" class="btn btn-light btn-sm">Back to attempts</a>
+      <a class="btn btn-outline-secondary" href="{% url 'create_quiz:quiz_attempts' quiz.pk %}">Back</a>
     </div>
   </div>
 

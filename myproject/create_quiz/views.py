@@ -72,6 +72,15 @@ class QuizUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse("create_quiz:quiz_detail", args=[self.object.pk])
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        room_code = self.request.GET.get('room')
+        if room_code:
+            _set_last_room_for_quiz_in_session(self.request, self.object.pk, room_code)
+        ctx['room_code'] = room_code or self.request.session.get(f"last_room_for_quiz_{self.object.pk}")
+        return ctx
+
 
 @method_decorator(login_required, name="dispatch")
 class QuizDetailView(DetailView):
@@ -89,7 +98,11 @@ class QuizDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         quiz = self.get_object()
+        room_code = self.request.GET.get('room')
+        if room_code:
+            _set_last_room_for_quiz_in_session(self.request, quiz.pk, room_code)
         ctx['is_room_admin'] = user_is_room_owner_or_admin_for_quiz(self.request.user, quiz)
+        ctx['room_code'] = room_code or self.request.session.get(f"last_room_for_quiz_{quiz.pk}")
         return ctx
 
 
@@ -357,3 +370,9 @@ def attempt_detail(request, attempt_id):
         'attempt': attempt,
         'answer_rows': answer_rows,
     })
+
+def _set_last_room_for_quiz_in_session(request, quiz_pk, room_code):
+    if not room_code:
+        return
+    key = f"last_room_for_quiz_{quiz_pk}"
+    request.session[key] = room_code

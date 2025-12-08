@@ -44,7 +44,7 @@
             {% else %}
               <span class="badge bg-secondary ms-2">ปิด</span>
             {% endif %}
-            <div class="small text-muted">Created by: {{ q.creator }}</div>
+            <div class="small text-muted">สร้างโดย: {{ q.creator }}</div>
           </div>
 
           <div>
@@ -104,7 +104,7 @@
         <li class="list-group-item d-flex justify-content-between align-items-center">
           <div>
             <strong>{{ q.title }}</strong>
-            <div class="small text-muted">Created by: {{ q.creator }}</div>
+            <div class="small text-muted">สร้างโดย: {{ q.creator }}</div>
           </div>
 
           <div>
@@ -122,59 +122,16 @@
                   </a>
                 {% endif %}
               {% else %}
-                <button class="btn btn-secondary btn-sm" disabled>Unavailable</button>
+                <button class="btn btn-secondary btn-sm" disabled>ไม่พร้อมใช้งาน</button>
               {% endif %}
             {% endwith %}
           </div>
         </li>
       {% empty %}
-        <li class="list-group-item">ไม่มี quiz ที่เปิดให้เข้าทำในขณะนี้</li>
+        <li class="list-group-item">ไม่มี Quiz ที่เปิดให้เข้าทำในขณะนี้</li>
       {% endfor %}
     </ul>
   {% endif %}
-
-</div>
-
-<div class="modal fade" id="inviteUserModal" tabindex="-1" aria-labelledby="inviteUserModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="post" action="{% url 'room:invite' room.code %}">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="inviteUserModalLabel">เชิญสมาชิกเข้าห้อง</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="inviteUsername" class="form-label">Username or email</label>
-            <input id="inviteUsername" name="username" type="text" class="form-control" required>
-            <div class="form-text">Enter the username or email of the user to invite.</div>
-          </div>
-
-          <div class="mb-3">
-            <label for="inviteRole" class="form-label">Role</label>
-            <select id="inviteRole" name="role" class="form-select" required>
-              {# If current user is admin, only show student option #}
-              {% if role == 'admin' %}
-                <option value="student" selected>Member</option>
-              {% else %}
-                {# owner (or others with permission) can choose admin or student #}
-                <option value="admin">Admin</option>
-                <option value="student" selected>Member</option>
-              {% endif %}
-            </select>
-            <div class="form-text">Owner can invite as Admin or Member. Admin can invite only Members.</div>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-          <button type="submit" class="btn btn-primary">Send invite</button>
-        </div>
-      </form>
-    </div>
-  </div>
 </div>
 
 {% endblock %}

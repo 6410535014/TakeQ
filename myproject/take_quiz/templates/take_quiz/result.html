@@ -15,28 +15,71 @@
 
 <hr>
 <h4>Answers</h4>
-<ul class="list-group">
-  {% for a in answers %}
+<ul class="list-group mb-4">
+  {% for row in answer_rows %}
     <li class="list-group-item">
-      <strong>Q:</strong> {{ a.question.text }}<br>
-      {% if a.selected_choice %}
-        <strong>Your answer:</strong> {{ a.selected_choice.text }}
-        {% if a.selected_choice.is_correct %}
-          <span class="badge bg-success">Correct</span>
+
+      {# ---------- NUMBER + MARK ON FIRST LINE ---------- #}
+      <div class="mb-1">
+        <strong>{{ forloop.counter }}.</strong>
+
+        {% if row.is_correct is True %}
+          <span class="badge bg-success ms-1">Correct</span>
+        {% elif row.is_correct is False %}
+          <span class="badge bg-danger ms-1">Incorrect</span>
         {% else %}
-          <span class="badge bg-danger">Wrong</span>
+          <span class="badge bg-secondary ms-1">Not marked</span>
         {% endif %}
-      {% else %}
-        <strong>Your answer:</strong> {{ a.text|default:"(no answer)" }}
-      {% endif %}
+      </div>
+
+      {# ---------- QUESTION ON NEXT LINE ---------- #}
+      <div class="mb-2">
+        <strong>{{ row.question.text }}</strong>
+      </div>
+
+      {# ---------- YOUR ANSWER ---------- #}
+      <div class="mb-1">
+        <strong>Your answer:</strong>
+        {% if row.qtype == 'mcq' %}
+            {% if row.selected_choice %}
+                {{ row.selected_choice.text }}
+            {% else %}
+                <em>No answer</em>
+            {% endif %}
+        {% else %}
+            {% if row.text %}
+                {{ row.text }}
+            {% else %}
+                <em>No answer provided</em>
+            {% endif %}
+        {% endif %}
+      </div>
+
+      {# ---------- CORRECT ANSWER ---------- #}
+      <div>
+        <strong>Correct answer:</strong>
+        {% if row.qtype == 'mcq' %}
+            {% if row.correct_choice %}
+                {{ row.correct_choice.text }}
+            {% else %}
+                <em>(no correct choice set)</em>
+            {% endif %}
+        {% else %}
+            <em>Requires manual grading</em>
+        {% endif %}
+      </div>
+
     </li>
   {% endfor %}
 </ul>
-<hr>
-{% if attempt.room_code %}
-    <a href="{% url 'room:detail' attempt.room_code %}" class="btn btn-secondary">Back to room</a>
-{% else %}
-    <a href="{% url 'take_quiz:quiz_list' %}" class="btn btn-secondary">Back to quizzes</a>
-{% endif %}
 
+
+
+<div>
+  {% if back_room %}
+    <a href="{% url 'room:detail' back_room %}" class="btn btn-secondary">Back to room</a>
+  {% else %}
+    <a href="{% url 'take_quiz:quiz_list' %}" class="btn btn-secondary">Back to quizzes</a>
+  {% endif %}
+</div>
 {% endblock %}

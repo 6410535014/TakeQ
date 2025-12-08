@@ -4,16 +4,18 @@ from django.views.generic import ListView, CreateView, UpdateView, DetailView, D
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from myapp.models import Quiz, Question, Choice, Attempt
+from myapp.models import Quiz, Question, Choice, Attempt, Answer
 from .forms import QuizForm, QuestionForm, make_choice_formset
 from django.http import JsonResponse, HttpResponseForbidden, Http404
 from django.views.decorators.http import require_POST
-from room.models import RoomQuizAssignment, RoomMembership
+from room.models import RoomQuizAssignment, RoomMembership, Room
 from django.contrib.auth import get_user_model
 from django.apps import apps
 from django.contrib import messages
 from django.views import View
 from room.models import Room
+from datetime import timedelta
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -391,7 +393,8 @@ def attempt_detail(request, attempt_id):
             'question': a.question,
             'selected_choice': a.selected_choice,
             'text': a.text,
-            'is_correct': getattr(a.selected_choice, 'is_correct', False) if a.selected_choice else None
+            'is_correct': a.is_correct,
+            'answer_id': a.pk,
         }
         answer_rows.append(row)
 
@@ -435,3 +438,45 @@ def quiz_delete(request, pk):
 
     messages.success(request, "Quiz deleted.")
     return redirect(redirect_to)
+
+@require_POST
+def mark_answer(request, answer_id):
+    ans = get_object_or_404(Answer, pk=answer_id)
+    attempt = ans.attempt
+    quiz = attempt.quiz
+
+    if not (quiz.creator == request.user or user_is_room_owner_or_admin_for_quiz(request.user, quiz)):
+        return HttpResponseForbidden()
+
+    mark = request.POST.get("mark")
+    if mark == "correct":
+        ans.is_correct = True
+    else:
+        ans.is_correct = False
+    ans.save()
+
+    questions = quiz.questions.all()
+    gradable_qs = questions.filter(qtype__in=["mcq", "short"])
+    total_gradable = gradable_qs.count()
+
+    correct_count = 0
+    for q in gradable_qs:
+        if q.qtype == "mcq":
+            a = attempt.answers.filter(question=q).first()
+            if a and a.selected_choice and getattr(a.selected_choice, "is_correct", False):
+                correct_count += 1
+        else:
+            a = attempt.answers.filter(question=q).first()
+            if a and a.is_correct is True:
+                correct_count += 1
+
+    if total_gradable > 0:
+        attempt.score = (correct_count / total_gradable) * 100.0
+    else:
+        attempt.score = None
+
+    attempt.save()
+
+    messages.success(request, "Answer marked.")
+    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or "/"
+    return redirect(next_url)

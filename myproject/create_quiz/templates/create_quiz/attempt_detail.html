@@ -52,9 +52,27 @@
             </small>
           </div>
         {% else %}
-          <div class="border rounded p-2">
+          <div class="border rounded p-2 mb-2">
             {{ row.text|linebreaks }}
           </div>
+
+          {% if request.user == quiz.creator or is_room_admin %}
+            <form method="post" action="{% url 'create_quiz:mark_answer' row.answer_id %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.path }}">
+              <button type="submit" name="mark" value="correct" class="btn btn-sm btn-success">Mark correct</button>
+              <button type="submit" name="mark" value="incorrect" class="btn btn-sm btn-outline-danger">Mark incorrect</button>
+            </form>
+            {% if row.is_correct is not None %}
+              <span class="ms-2">
+                {% if row.is_correct %}
+                  <span class="badge bg-success">Correct</span>
+                {% else %}
+                  <span class="badge bg-danger">Incorrect</span>
+                {% endif %}
+              </span>
+            {% endif %}
+          {% endif %}
         {% endif %}
       </li>
     {% endfor %}

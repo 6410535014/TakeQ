@@ -149,8 +149,36 @@ def submit_quiz(request, attempt_id):
 @login_required
 def attempt_result(request, attempt_id):
     attempt = get_object_or_404(Attempt, pk=attempt_id, taker=request.user)
-    answers = attempt.answers.select_related("question", "selected_choice").all()
-    return render(request, "take_quiz/result.html", {
+    quiz = attempt.quiz
+
+    answers_qs = attempt.answers.select_related("question", "selected_choice").all().order_by("question__order", "question__id")
+
+    answer_rows = []
+    for a in answers_qs:
+        q = a.question
+        row = {
+            "question": q,
+            "qtype": q.qtype,
+            "selected_choice": a.selected_choice,
+            "text": a.text,
+            "is_correct": None,
+            "correct_choice": None,
+        }
+
+        if q.qtype == "mcq":
+            if a.selected_choice:
+                row["is_correct"] = bool(getattr(a.selected_choice, "is_correct", False))
+            correct_choice = q.choices.filter(is_correct=True).first()
+            if correct_choice:
+                row["correct_choice"] = correct_choice
+        else:
+            row["is_correct"] = a.is_correct
+
+        answer_rows.append(row)
+
+    context = {
         "attempt": attempt,
-        "answers": answers,
-    })
+        "quiz": quiz,
+        "answer_rows": answer_rows,
+    }
+    return render(request, "take_quiz/result.html", context)

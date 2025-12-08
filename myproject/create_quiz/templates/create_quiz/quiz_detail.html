@@ -23,10 +23,14 @@
 
   <hr>
 
+    {% if request.user == quiz.creator or is_room_admin %}
+      <a href="{% url 'create_quiz:quiz_attempts' quiz.pk %}" class="btn btn-outline-secondary btn-sm ms-2">View attempts</a>
+      <hr>
+    {% endif %}
+
   <h4>Questions</h4>
 
   <div id="questions-list" class="list-group">
-    {# Ensure questions ordered by .order #}
     {% for q in quiz.questions.all|dictsort:"order" %}
       <div class="list-group-item d-flex justify-content-between align-items-center" draggable="true" data-qid="{{ q.id }}">
         <div>

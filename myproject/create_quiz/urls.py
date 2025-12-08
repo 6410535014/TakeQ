@@ -15,4 +15,6 @@ urlpatterns = [
     path("<int:pk>/delete/", views.QuizDeleteView.as_view(), name="quiz_delete"),
     path("<int:quiz_id>/reorder/", views.reorder_questions, name="reorder_questions"),
     path('question/<int:pk>/delete/', views.delete_question, name='delete_question'),
+    path('<int:pk>/attempts/', views.QuizAttemptsListView.as_view(), name='quiz_attempts'),
+    path('attempt/<int:attempt_id>/detail/', views.attempt_detail, name='attempt_detail'),
 ]

@@ -4,7 +4,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DetailView, D
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from myapp.models import Quiz, Question, Choice
+from myapp.models import Quiz, Question, Choice, Attempt
 from .forms import QuizForm, QuestionForm, make_choice_formset
 from django.http import JsonResponse, HttpResponseForbidden, Http404
 from django.views.decorators.http import require_POST
@@ -12,6 +12,7 @@ from room.models import RoomQuizAssignment, RoomMembership
 from django.contrib.auth import get_user_model
 from django.apps import apps
 from django.contrib import messages
+from django.views import View
 
 User = get_user_model()
 
@@ -29,11 +30,7 @@ def user_is_room_owner_or_admin_for_quiz(user, quiz):
         'owner', 'admin'
     ]
 
-    return RoomMembership.objects.filter(
-        user=user,
-        room_id__in=room_ids,
-        role__in=allowed_roles
-    ).exists()
+    return RoomMembership.objects.filter(user=user, room_id__in=room_ids, role__in=allowed_roles).exists()
 
 @method_decorator(login_required, name="dispatch")
 class QuizListView(ListView):
@@ -88,6 +85,13 @@ class QuizDetailView(DetailView):
         if not (quiz.creator == self.request.user or user_is_room_owner_or_admin_for_quiz(self.request.user, quiz)):
             raise Http404("No quiz found matching the query")
         return quiz
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        quiz = self.get_object()
+        ctx['is_room_admin'] = user_is_room_owner_or_admin_for_quiz(self.request.user, quiz)
+        return ctx
+
 
 class QuizDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Quiz
@@ -226,7 +230,6 @@ def edit_question(request, pk):
     })
 
 
-
 @login_required
 def toggle_publish(request, pk):
     if request.method != "POST":
@@ -302,3 +305,55 @@ def delete_question(request, pk):
     messages.success(request, "Question deleted.")
 
     return redirect('create_quiz:quiz_detail', pk=quiz.pk)
+
+
+@method_decorator(login_required, name='dispatch')
+class QuizAttemptsListView(ListView):
+    model = Attempt
+    template_name = "create_quiz/quiz_attempts.html"
+    context_object_name = "attempts"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.quiz = get_object_or_404(apps.get_model('myapp', 'Quiz'), pk=kwargs['pk'])
+        if not (self.quiz.creator == request.user or user_is_room_owner_or_admin_for_quiz(request.user, self.quiz)):
+            return HttpResponseForbidden()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        Attempt = apps.get_model('myapp', 'Attempt')
+        return Attempt.objects.filter(quiz=self.quiz).select_related('taker').order_by('-started_at')
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['quiz'] = self.quiz
+        return ctx
+    
+
+@login_required
+def attempt_detail(request, attempt_id):
+    Attempt = apps.get_model('myapp', 'Attempt')
+    Answer = apps.get_model('myapp', 'Answer')
+    Choice = apps.get_model('myapp', 'Choice')
+    attempt = get_object_or_404(Attempt, pk=attempt_id)
+    quiz = attempt.quiz
+
+    if not (quiz.creator == request.user or user_is_room_owner_or_admin_for_quiz(request.user, quiz)):
+        return HttpResponseForbidden()
+
+    answers = attempt.answers.select_related('question', 'selected_choice').all().order_by('question__order', 'question__id')
+
+    answer_rows = []
+    for a in answers:
+        row = {
+            'question': a.question,
+            'selected_choice': a.selected_choice,
+            'text': a.text,
+            'is_correct': getattr(a.selected_choice, 'is_correct', False) if a.selected_choice else None
+        }
+        answer_rows.append(row)
+
+    return render(request, 'create_quiz/attempt_detail.html', {
+        'quiz': quiz,
+        'attempt': attempt,
+        'answer_rows': answer_rows,
+    })

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Answers — {{ quiz.title }}</h3>
+    <div>
+      <a href="{% url 'create_quiz:quiz_attempts' quiz.pk %}" class="btn btn-light btn-sm">Back to attempts</a>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <p><strong>Student:</strong> {{ attempt.taker.username }}</p>
+      <p><strong>Started:</strong> {{ attempt.started_at|date:"Y-m-d H:i" }}</p>
+      <p><strong>Finished:</strong> {% if attempt.finished_at %}{{ attempt.finished_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}</p>
+      <p><strong>Score:</strong> {% if attempt.score is not None %}{{ attempt.score|floatformat:1 }}{% else %}Not graded{% endif %}</p>
+    </div>
+  </div>
+
+  <ol class="list-group list-group-numbered">
+    {% for row in answer_rows %}
+      <li class="list-group-item">
+        <div class="mb-1"><strong>{{ row.question.text }}</strong></div>
+
+        {% if row.question.qtype == 'mcq' %}
+          <div>
+            {% for c in row.question.choices.all %}
+              <div class="form-check">
+                <input class="form-check-input" type="radio" disabled {% if row.selected_choice and row.selected_choice.id == c.id %}checked{% endif %}>
+                <label class="form-check-label">
+                  {{ c.text }}
+                  {% if c.is_correct %}
+                    <span class="badge bg-success ms-2">Correct</span>
+                  {% endif %}
+                </label>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="mt-2">
+            <small>
+              Student chose:
+              {% if row.selected_choice %}
+                <strong>{{ row.selected_choice.text }}</strong>
+                {% if row.is_correct %}
+                  <span class="text-success">(correct)</span>
+                {% else %}
+                  <span class="text-danger">(incorrect)</span>
+                {% endif %}
+              {% else %}
+                <em>No answer</em>
+              {% endif %}
+            </small>
+          </div>
+        {% else %}
+          <div class="border rounded p-2">
+            {{ row.text|linebreaks }}
+          </div>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+</div>
+{% endblock %}

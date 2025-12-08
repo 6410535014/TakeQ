@@ -8,8 +8,8 @@
     <div class="col-sm-10 col-md-8 col-lg-6">
       <div class="card shadow-sm">
         <div class="card-body p-4">
-          <h4 class="card-title mb-3">Create an account</h4>
-          <p class="text-muted small mb-4">Create an account to manage rooms and quizzes.</p>
+          <h4 class="card-title mb-3">สร้างบัญชีผู้ใช้</h4>
+          <p class="text-muted small mb-4">สร้างบัญชีผู้ใช้ใหม่เพื่อเข้าใช้งาน</p>
 
           <form method="post" novalidate>
             {% csrf_token %}
@@ -21,7 +21,7 @@
             {% endif %}
 
             <div class="mb-3">
-              <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+              <label class="form-label" for="{{ form.username.id_for_label }}">ชื่อผู้ใช้</label>
               {{ form.username }}
               {% for err in form.username.errors %}
                 <div class="invalid-feedback d-block">{{ err }}</div>
@@ -29,44 +29,40 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
-              {{ form.username }}
+              <label class="form-label" for="{{ form.email.id_for_label }}">อีเมล</label>
+              {{ form.email }}
               {% for err in form.email.errors %}
                 <div class="invalid-feedback d-block">{{ err }}</div>
               {% endfor %}
             </div>
 
             <div class="mb-3">
-              <label class="form-label" for="{{ form.password1.id_for_label }}">Password</label>
-              {{ form.username }}
+              <label class="form-label" for="{{ form.password1.id_for_label }}">รหัสผ่าน</label>
+              {{ form.password1 }}
               {% for err in form.password1.errors %}
                 <div class="invalid-feedback d-block">{{ err }}</div>
               {% endfor %}
             </div>
 
             <div class="mb-3">
-              <label class="form-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
-              {{ form.username }}
+              <label class="form-label" for="{{ form.password2.id_for_label }}">ยืนยันรหัสผ่าน</label>
+              {{ form.password2 }}
               {% for err in form.password2.errors %}
                 <div class="invalid-feedback d-block">{{ err }}</div>
               {% endfor %}
             </div>
 
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary">Create account</button>
+              <button type="submit" class="btn btn-primary">สร้างบัญชีผู้ใช้</button>
             </div>
           </form>
 
           <hr class="my-4">
 
           <div class="text-center small">
-            Already have an account? <a href="{% url 'login' %}">Sign in</a>
+            มีบัญชีผู้ใช้อยู่แล้วใช่ไหม? <a href="{% url 'login' %}">ลงชื่อเข้าใช้</a>
           </div>
         </div>
-      </div>
-
-      <div class="text-center mt-3 small text-muted">
-        We’ll never share your email with anyone else.
       </div>
     </div>
   </div>

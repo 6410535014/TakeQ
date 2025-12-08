@@ -8,8 +8,8 @@
     <div class="col-lg-9">
 
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h4 mb-0">Room invitations</h2>
-        <a href="{% url 'home' %}" class="btn btn-sm btn-outline-secondary">Back</a>
+        <h2 class="h4 mb-0">คำเชิญเข้าร่วมห้อง</h2>
+        <a href="{% url 'home' %}" class="btn btn-dark btn-sm">ย้อนกลับ</a>
       </div>
 
       {% if invitations %}
@@ -24,7 +24,7 @@
                     </a>
                   </h5>
                   <div class="small text-muted">
-                    Invited by: {{ inv.invited_by }} — Role: <strong>{{ inv.role }}</strong>
+                    คำเชิญโดย: {{ inv.invited_by }} — บทบาท: <strong>{{ inv.role }}</strong>
                     {% if inv.created_at %}• {{ inv.created_at|date:"Y-m-d H:i" }}{% endif %}
                   </div>
 
@@ -35,27 +35,25 @@
 
                 <div class="text-end">
                   {% if inv.status == 'pending' %}
-                    <span class="badge bg-warning text-dark mb-2">Pending</span>
+                    <span class="badge bg-warning text-dark mb-2">รอดำเนินการ</span>
 
                     <div class="d-flex justify-content-end">
                       <form method="post" action="{% url 'room:invitation_response' inv.id 'accept' %}" class="me-1">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                        <button type="submit" class="btn btn-sm btn-success">ตอบรับ</button>
                       </form>
 
                       <form method="post" action="{% url 'room:invitation_response' inv.id 'decline' %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Decline</button>
+                        <button type="submit" class="btn btn-danger btn-sm">ปฏิเสธ</button>
                       </form>
                     </div>
 
                   {% elif inv.status == 'accepted' %}
-                    <span class="badge bg-success mb-2">Accepted</span>
-                    <div class="small text-muted">You are a member</div>
+                    <span class="badge bg-primary mb-2">ตอบรับแล้ว</span>
 
                   {% elif inv.status == 'declined' %}
-                    <span class="badge bg-secondary mb-2">Declined</span>
-                    <div class="small text-muted">You declined this invitation</div>
+                    <span class="badge bg-secondary mb-2">ปฏิเสธแล้ว</span>
 
                   {% else %}
                     <span class="badge bg-info mb-2">{{ inv.status }}</span>
@@ -68,8 +66,8 @@
       {% else %}
         <div class="card shadow-sm">
           <div class="card-body text-center">
-            <p class="mb-0">You have no invitations.</p>
-            <small class="text-muted">Owners and admins can invite you to rooms — you’ll see them here.</small>
+            <p class="mb-0">ยังไม่มีคำเชิญ</p>
+            <small class="text-muted">เจ้าของและผู้ดูแลสามารถเชิญคุณเข้าสู่ห้องเรียนได้ - คุณจะเห็นคำเชิญเหล่านั้นที่นี่</small>
           </div>
         </div>
       {% endif %}

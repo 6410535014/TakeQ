@@ -8,6 +8,15 @@
     <div>
       <a class="btn btn-outline-info" href="{% url 'create_quiz:add_question' quiz.pk %}">Add Question</a>
       <a class="btn btn-outline-success" href="{% url 'create_quiz:quiz_attempts' quiz.pk %}">View attempts</a>
+      <form method="post" action="{% url 'create_quiz:quiz_delete' quiz.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="room" value="{{ room_code }}">
+        <button type="submit"
+                class="btn btn-sm btn-outline-danger"
+                onclick="return confirm('Delete this quiz? This action cannot be undone.');">
+          Delete
+        </button>
+      </form>
       <a class="btn btn-outline-secondary" href="{% url 'room:detail' room_code %}">Back</a>
     </div>
   </div>

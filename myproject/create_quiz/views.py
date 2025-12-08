@@ -13,6 +13,7 @@ from django.contrib.auth import get_user_model
 from django.apps import apps
 from django.contrib import messages
 from django.views import View
+from room.models import Room
 
 User = get_user_model()
 
@@ -129,11 +130,9 @@ class QuizDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         quiz = self.get_object()
-        room_code = self.request.GET.get('room')
-        if room_code:
-            _set_last_room_for_quiz_in_session(self.request, quiz.pk, room_code)
+        room_code = self.request.GET.get('room') or self.request.session.get(f"last_room_for_quiz_{quiz.pk}")
+        ctx['room_code'] = room_code
         ctx['is_room_admin'] = user_is_room_owner_or_admin_for_quiz(self.request.user, quiz)
-        ctx['room_code'] = room_code or self.request.session.get(f"last_room_for_quiz_{quiz.pk}")
         return ctx
 
 
@@ -407,3 +406,32 @@ def _set_last_room_for_quiz_in_session(request, quiz_pk, room_code):
         return
     key = f"last_room_for_quiz_{quiz_pk}"
     request.session[key] = room_code
+
+@require_POST
+def quiz_delete(request, pk):
+    quiz = get_object_or_404(Quiz, pk=pk)
+
+    if not (quiz.creator == request.user or user_is_room_owner_or_admin_for_quiz(request.user, quiz)):
+        return HttpResponseForbidden()
+
+    posted_room = (request.POST.get('room') or "").strip()
+    session_key = f"last_room_for_quiz_{quiz.pk}"
+    session_room = request.session.get(session_key)
+
+    room_code_candidate = posted_room or session_room
+
+    if room_code_candidate and Room.objects.filter(code=room_code_candidate).exists():
+        redirect_to = reverse('room:detail', args=[room_code_candidate])
+    else:
+        redirect_to = reverse('create_quiz:quiz_list')
+
+    quiz.delete()
+
+    try:
+        if session_key in request.session:
+            del request.session[session_key]
+    except Exception:
+        pass
+
+    messages.success(request, "Quiz deleted.")
+    return redirect(redirect_to)

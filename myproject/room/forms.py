@@ -15,5 +15,14 @@ class JoinRoomByCodeForm(forms.Form):
 	code = forms.CharField(max_length=12)
 
 class InviteForm(forms.Form):
-	username = forms.CharField(max_length=150, help_text='Username or email of user to invite')
-	role = forms.ChoiceField(choices=[('student','Student'),('admin','Admin')])
+    username = forms.CharField(max_length=150, help_text='Username or email of user to invite')
+    role = forms.ChoiceField(choices=[('student','สมาชิก'),('admin','ผู้ดูแลห้อง')])
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].widget.attrs.update({
+            "class": "form-control",
+        })
+        self.fields["role"].widget.attrs.update({
+            "class": "form-select"
+        })

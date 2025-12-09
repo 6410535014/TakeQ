@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}<title>Manage Members — {{ room.name }}</title>{% endblock %}
+{% block title %}
+  <title>จัดการสมาชิก - {{ room.name }}</title>
+{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -8,89 +10,89 @@
     <div class="col-lg-9">
 
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="mb-0">Members — {{ room.name }}</h3>
-        <a href="{% url 'room:detail' room.code %}" class="btn btn-outline-secondary btn-sm">Back to room</a>
+        <h3 class="mb-0">สมาชิก - {{ room.name }}</h3>
+        <a href="{% url 'room:detail' room.code %}" class="btn btn-dark btn-sm">ย้อนกลับ</a>
       </div>
 
       <div class="mb-3">
         {% if role == RoomMembership.ROLE_OWNER or role == 'owner' or role == 'admin' %}
-          <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#inviteModal">Invite member</button>
+          <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#inviteModal">เชิญสมาชิกใหม่</button>
         {% endif %}
       </div>
 
       <div class="card mb-3">
         <div class="card-body">
-          <h5 class="card-title">Owner</h5>
+          <h5 class="card-title">เจ้าของห้อง</h5>
           <ul class="list-group list-group-flush mb-3">
             {% for m in owners %}
               <li class="list-group-item d-flex justify-content-between align-items-center">
                 <div>{{ m.user.username }}</div>
-                <div><span class="badge bg-dark">Owner</span></div>
+                <div><span class="badge bg-dark">เจ้าของห้อง</span></div>
               </li>
             {% endfor %}
           </ul>
 
-          <h5 class="card-title">Admins</h5>
+          <h5 class="card-title">ผู้ดูแลห้อง</h5>
           <ul class="list-group list-group-flush mb-3">
             {% for m in admins %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>{{ m.user.username }}</div>
                     <div>
-                    <span class="badge bg-secondary me-2">Admin</span>
+                    <span class="badge bg-secondary me-2">ผู้ดูแลห้อง</span>
 
                     {% if is_owner %}
                         <form method="post" action="{% url 'room:change_member_role' room.code %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
                         <input type="hidden" name="new_role" value="student">
-                        <button type="submit" class="btn btn-sm btn-outline-warning me-1">Demote</button>
+                        <button type="submit" class="btn btn-sm btn-outline-warning me-1">ลดบทบาท</button>
                         </form>
 
                         <form method="post" action="{% url 'room:remove_member' room.code %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this admin?');">Remove</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this admin?');">นำออก</button>
                         </form>
                     {% endif %}
                     </div>
                 </li>
             {% empty %}
-              <li class="list-group-item">No admins</li>
+              <li class="list-group-item">ไม่มีผู้ดูแลห้อง</li>
             {% endfor %}
           </ul>
 
-          <h5 class="card-title">Members</h5>
+          <h5 class="card-title">สมาชิก</h5>
           <ul class="list-group list-group-flush">
             {% for m in students %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>{{ m.user.username }}</div>
                     <div>
-                    <span class="badge bg-light text-dark me-2">Member</span>
+                    <span class="badge bg-light text-dark me-2">สมาชิก</span>
 
                     {% if is_owner %}
                     <form method="post" action="{% url 'room:change_member_role' room.code %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
                         <input type="hidden" name="new_role" value="admin">
-                        <button type="submit" class="btn btn-sm btn-outline-success me-1">Promote</button>
+                        <button type="submit" class="btn btn-sm btn-outline-success me-1">เพิ่มบทบาท</button>
                     </form>
                     <form method="post" action="{% url 'room:remove_member' room.code %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this admin?');">Remove</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this admin?');">นำออก</button>
                     </form>
                     {% elif is_admin %}
                     <form method="post" action="{% url 'room:remove_member' room.code %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="member_user_id" value="{{ m.user.pk }}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this member?');">Remove</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this member?');">นำออก</button>
                     </form>
                     {% endif %}
 
                     </div>
                 </li>
             {% empty %}
-              <li class="list-group-item">No members</li>
+              <li class="list-group-item">ไม่มีสมาชิก</li>
             {% endfor %}
           </ul>
         </div>
@@ -102,32 +104,32 @@
             <form method="post" action="{% url 'room:manage_members' room.code %}">
               {% csrf_token %}
               <div class="modal-header">
-                <h5 class="modal-title" id="inviteModalLabel">Invite member to {{ room.name }}</h5>
+                <h5 class="modal-title" id="inviteModalLabel">เชิญสมาชิกใหม่เข้าสู่ห้อง {{ room.name }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body">
                 <div class="mb-3">
-                  <label class="form-label">Username or Email</label>
+                  <label class="form-label fw-semibold">ชื่อผู้ใช้หรืออีเมล</label>
                   {{ invite_form.username }}
                 </div>
                 <div class="mb-3">
-                <label class="form-label fw-semibold">Role</label>
-                <select name="{{ invite_form.role.name }}" class="form-select">
-                    {% for value, label in invite_form.role.field.choices %}
-                    <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-                <div class="form-text mt-1">
-                    <span class="text-muted">
-                    Owner can invite <strong>Admin</strong> or <strong>Member</strong>.
-                    Admin can invite <strong>Member</strong> only.
-                    </span>
-                </div>
+                  <label class="form-label fw-semibold">บทบาท</label>
+                  <select name="{{ invite_form.role.name }}" class="form-select">
+                      {% for value, label in invite_form.role.field.choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                      {% endfor %}
+                  </select>
+                  <div class="form-text mt-1">
+                      <span class="text-muted">
+                      เจ้าของห้องสามารถเชิญได้ทั้ง <strong>ผู้ดูแลห้อง</strong> หรือ <strong>สมาชิก</strong><br>
+                      ผู้ดูแลห้องสามารถเชิญได้เฉพาะ <strong>สมาชิก</strong> เท่านั้น
+                      </span>
+                  </div>
                 </div>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-primary">Send invite</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="submit" class="btn btn-primary">ส่งคำเชิญ</button>
               </div>
             </form>
           </div>

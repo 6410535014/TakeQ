@@ -47,6 +47,7 @@ class Question(models.Model):
         ),
     )
     order = models.PositiveIntegerField(default=0)
+    correct_text = models.TextField(blank=True, default="", help_text="...")
 
 
 class Choice(models.Model):

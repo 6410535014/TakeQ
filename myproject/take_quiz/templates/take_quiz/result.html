@@ -59,13 +59,17 @@
       <div>
         <strong>Correct answer:</strong>
         {% if row.qtype == 'mcq' %}
-            {% if row.correct_choice %}
-                {{ row.correct_choice.text }}
-            {% else %}
-                <em>(no correct choice set)</em>
-            {% endif %}
+          {% if row.correct_choice %}
+            {{ row.correct_choice.text }}
+          {% else %}
+            <em>(no correct choice set)</em>
+          {% endif %}
         {% else %}
+          {% if row.correct_text %}
+            {{ row.correct_text }}
+          {% else %}
             <em>Requires manual grading</em>
+          {% endif %}
         {% endif %}
       </div>
 

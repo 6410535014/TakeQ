@@ -163,16 +163,14 @@ def attempt_result(request, attempt_id):
             "text": a.text,
             "is_correct": None,
             "correct_choice": None,
+            "correct_text": None,
         }
 
         if q.qtype == "mcq":
-            if a.selected_choice:
-                row["is_correct"] = bool(getattr(a.selected_choice, "is_correct", False))
-            correct_choice = q.choices.filter(is_correct=True).first()
-            if correct_choice:
-                row["correct_choice"] = correct_choice
+            row["correct_text"] = None
         else:
             row["is_correct"] = a.is_correct
+            row["correct_text"] = q.correct_text if q.correct_text else None
 
         answer_rows.append(row)
 

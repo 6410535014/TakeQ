@@ -30,6 +30,15 @@
         <div class="text-danger small">{{ form.qtype.errors }}</div>
       {% endif %}
     </div>
+    
+    <div id="div_correct_text" class="mb-3" style="display:none;">
+      <label class="form-label">Model answer / Correct answer (display only)</label>
+      {{ form.correct_text }}
+      {% if form.correct_text.errors %}
+        <div class="text-danger small">{{ form.correct_text.errors }}</div>
+      {% endif %}
+      <div class="form-text">This text will be shown as the "Correct answer" for short-answer questions. It does not auto-grade.</div>
+    </div>
 
     {{ form.order }} {# hidden widget expected from form definition #}
 
@@ -105,17 +114,20 @@
 (function(){
   const qtypeSelect = document.querySelector('#id_qtype');
   const choicesBlock = document.getElementById('choices-block');
-  const addBtn = document.getElementById('add-choice-btn');
-  const container = document.getElementById('choices-container');
-  const emptyTplEl = document.getElementById('empty-form-template');
-  const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+  const correctTextDiv = document.getElementById('div_correct_text');
 
   function toggleByQtype(){
     const v = qtypeSelect ? qtypeSelect.value : null;
-    if(v === 'mcq'){
-      if(choicesBlock) choicesBlock.style.display = 'block';
+    if (v === 'mcq') {
+      if (choicesBlock) choicesBlock.style.display = 'block';
     } else {
-      if(choicesBlock) choicesBlock.style.display = 'none';
+      if (choicesBlock) choicesBlock.style.display = 'none';
+    }
+
+    if (v === 'short') {
+      if (correctTextDiv) correctTextDiv.style.display = '';
+    } else {
+      if (correctTextDiv) correctTextDiv.style.display = 'none';
     }
   }
 

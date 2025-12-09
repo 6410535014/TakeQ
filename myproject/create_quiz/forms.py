@@ -28,9 +28,10 @@ class QuestionForm(forms.ModelForm):
 
     class Meta:
         model = Question
-        fields = ["text", "qtype", "order"]
+        fields = ['text', 'qtype', 'order', 'correct_text'] 
         widgets = {
             "order": forms.HiddenInput(),
+            'correct_text': forms.Textarea(attrs={'rows':3, 'class': 'form-control', 'placeholder': 'Model answer / rubric for short answers'}),
         }
 
     def __init__(self, *args, **kwargs):

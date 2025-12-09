@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}<title>{% if form.instance.pk %}Edit Quiz{% else %}Create Quiz{% endif %}</title>{% endblock %}
+{% block title %}
+  <title>{% if form.instance.pk %}แก้ไข Quiz{% else %}สร้าง Quiz ใหม่{% endif %}</title>
+{% endblock %}
 
 {% block content %}
 <div class="container py-3">
-  <h2 class="mb-3">{% if form.instance.pk %}Edit Quiz{% else %}Create Quiz{% endif %}</h2>
+  <h2 class="mb-3">{% if form.instance.pk %}แก้ไข Quiz{% else %}สร้าง Quiz ใหม่{% endif %}</h2>
 
   <form method="post" id="quiz-form">
     {% csrf_token %}
@@ -30,28 +32,25 @@
       {% endif %}
     </div>
 
-    {# Render actual form field as hidden so it doesn't create a visible input #}
     {{ form.time_limit_minutes.as_hidden }}
 
-    {# Time limit interactive block (visible UI) #}
     <div id="time-limit-wrapper" class="mb-3">
       <div id="time-limit-controls">
         {% if form.instance and form.instance.time_limit_minutes %}
           <div id="time-limit-block" class="d-flex align-items-center">
-            <label class="me-2">Time limit (minutes)</label>
+            <label class="me-2">กำหนดเวลา (นาที)</label>
             <input id="time-limit-input" type="number" min="1" class="form-control w-auto me-2" name="{{ form.time_limit_minutes.html_name }}" value="{{ form.instance.time_limit_minutes }}">
-            <button type="button" class="btn btn-sm btn-outline-danger" id="remove-time-limit-btn">Remove</button>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="remove-time-limit-btn">นำออก</button>
           </div>
         {% else %}
-          <button type="button" class="btn btn-sm btn-outline-primary" id="add-time-limit-btn">Add time limit</button>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="add-time-limit-btn">เพิ่มการจำกัดเวลา</button>
         {% endif %}
       </div>
-      <div class="form-text mt-1">Optional. Leave empty for no time limit.</div>
     </div>
 
     <div class="mt-3">
-      <button class="btn btn-success" type="submit">Save</button>
-      <a class="btn btn-secondary ms-2" href="{% url 'room:detail' room_code %}">Cancel</a>
+      <button class="btn btn-success" type="submit">บันทึก</button>
+      <a class="btn btn-secondary ms-2" href="{% url 'room:detail' room_code %}">ยกเลิก</a>
     </div>
   </form>
 </div>
@@ -70,21 +69,22 @@
 
     const label = document.createElement('label');
     label.className = 'me-2';
-    label.innerText = 'Time limit (minutes)';
+    label.innerText = 'กำหนดเวลา (นาที)';
 
     const input = document.createElement('input');
     input.type = 'number';
     input.min = '1';
-    input.className = 'form-control w-auto me-2';
+    input.className = 'form-control d-inline-block me-2';
     input.id = 'time-limit-input';
     input.name = realInput ? realInput.name : 'time_limit_minutes';
+    input.style.width = '75px';
     if(value) input.value = value;
 
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn btn-sm btn-outline-danger';
     btn.id = 'remove-time-limit-btn';
-    btn.innerText = 'Remove';
+    btn.innerText = 'นำออก';
 
     div.appendChild(label);
     div.appendChild(input);
@@ -117,7 +117,7 @@
       const name = realInput ? realInput.name : 'time_limit_minutes';
       const exist = document.querySelector('input[name="'+name+'"]');
       if(exist) exist.value = '';
-      controls.innerHTML = '<button type="button" class="btn btn-sm btn-outline-primary" id="add-time-limit-btn">Add time limit</button>';
+      controls.innerHTML = '<button type="button" class="btn btn-sm btn-outline-primary" id="add-time-limit-btn">เพิ่มการจำกัดเวลา</button>';
       const nb = document.getElementById('add-time-limit-btn');
       if(nb){
         nb.addEventListener('click', function(){

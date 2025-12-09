@@ -151,32 +151,48 @@ def attempt_result(request, attempt_id):
     attempt = get_object_or_404(Attempt, pk=attempt_id, taker=request.user)
     quiz = attempt.quiz
 
-    answers_qs = attempt.answers.select_related("question", "selected_choice").all().order_by("question__order", "question__id")
+    questions = quiz.questions.all().order_by("order", "id")
+    answers_qs = attempt.answers.select_related("question", "selected_choice").all()
+    answers_map = {a.question_id: a for a in answers_qs}
 
     answer_rows = []
-    for a in answers_qs:
-        q = a.question
+    for q in questions:
+        a = answers_map.get(q.pk)  # may be None if user didn't answer
+        selected_choice = a.selected_choice if a else None
+        text = a.text if a else ""
+
         row = {
             "question": q,
             "qtype": q.qtype,
-            "selected_choice": a.selected_choice,
-            "text": a.text,
+            "selected_choice": selected_choice,
+            "text": text,
             "is_correct": None,
             "correct_choice": None,
             "correct_text": None,
         }
 
         if q.qtype == "mcq":
-            row["correct_text"] = None
+            row["is_correct"] = bool(selected_choice and getattr(selected_choice, "is_correct", False))
+            row["correct_choice"] = q.choices.filter(is_correct=True).first()
         else:
-            row["is_correct"] = a.is_correct
-            row["correct_text"] = q.correct_text if q.correct_text else None
+            row["is_correct"] = a.is_correct if a else None
+            row["correct_text"] = getattr(q, "correct_text", None)
 
         answer_rows.append(row)
+
+    any_ungraded_short = any((r["qtype"] == "short" and r["is_correct"] is None) for r in answer_rows)
+
+    show_score = False
+    if attempt.score is not None and not any_ungraded_short:
+        show_score = True
+
+    back_room = getattr(attempt, "room_code", None) or request.session.get(f"last_room_for_quiz_{quiz.pk}")
 
     context = {
         "attempt": attempt,
         "quiz": quiz,
         "answer_rows": answer_rows,
+        "back_room": back_room,
+        "show_score": show_score,
     }
     return render(request, "take_quiz/result.html", context)

@@ -7,7 +7,7 @@
 
 <p>Started: {{ attempt.started_at }}</p>
 <p>Finished: {{ attempt.finished_at }}</p>
-{% if attempt.score != None %}
+{% if show_score %}
   <p>Score: {{ attempt.score|floatformat:2 }}%</p>
 {% else %}
   <p>Score: Not available (requires manual grading of short answers)</p>

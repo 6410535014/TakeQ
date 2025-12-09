@@ -118,7 +118,7 @@
 
     timerEl.textContent = 'Auto-submitting...';
     setTimeout(()=> {
-      try { form.submit(); } catch(e) { console.error('Auto-submit failed', e); }
+      try {window.__quiz_allow_unload(); form.submit(); } catch(e) { console.error('Auto-submit failed', e); }
     }, 100);
   }
 
@@ -180,9 +180,8 @@
     </div>
   {% endfor %}
 
-  <div class="d-flex justify-content-between align-items-center">
-    <a class="btn btn-secondary" href="{% url 'take_quiz:quiz_list' %}">Back</a>
-    <button class="btn btn-success" type="submit">Submit</button>
+  <div class="d-flex justify-content-end">
+      <button class="btn btn-success" type="submit">Submit</button>
   </div>
 </form>
 
@@ -276,6 +275,7 @@ function autoSubmit() {
   if (timerEl) timerEl.textContent = 'Auto-submitting...';
 
   try {
+    window.__quiz_allow_unload();
     form.submit();
     return;
   } catch (err) {
@@ -327,6 +327,85 @@ function autoSubmit() {
   window.addEventListener('beforeunload', function () {
     if (!submitted && new Date() >= endDate) {}
   });
+})();
+</script>
+
+<script>
+(function () {
+  const form = document.getElementById('quiz-form');
+  if (!form) return;
+
+  let allowUnload = false;
+
+  form.addEventListener('submit', function () {
+    allowUnload = true;
+  }, { passive: true });
+
+  window.__quiz_allow_unload = function () { allowUnload = true; };
+
+  window.addEventListener('beforeunload', function (e) {
+    if (allowUnload) return undefined;
+    const message = 'You are about to leave the quiz — this will end your attempt. Are you sure?';
+    e.preventDefault();
+    e.returnValue = message;
+    return message;
+  });
+
+  document.addEventListener('click', function (ev) {
+    if (allowUnload) return;
+    const a = ev.target.closest('a');
+    if (!a) return;
+
+    const href = a.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+    if (a.target === '_blank' || a.hasAttribute('download')) return;
+
+    try {
+      const url = new URL(href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+    } catch (err) {
+      return;
+    }
+
+    const ok = confirm('Leaving this page will end your quiz attempt. Do you want to continue and leave?');
+    if (!ok) {
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      return false;
+    }
+
+    allowUnload = true;
+    return true;
+  }, true);
+})();
+</script>
+
+<script>
+(function(){
+  const form = document.getElementById('quiz-form');
+  if (!form) return;
+
+  form.addEventListener('submit', function(e){
+    if (window.__quiz_auto_submitting) {
+      window.__quiz_auto_submitting = false;
+      return;
+    }
+
+    const autoHidden = form.querySelector('input[name="auto_submitted"]');
+    if (autoHidden && (autoHidden.value === '1' || autoHidden.value === 'true')) {
+      return;
+    }
+
+    const ok = confirm("Are you sure you want to submit your quiz? This action cannot be undone.");
+    if (!ok) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return false;
+    }
+    if (window.__quiz_allow_unload) window.__quiz_allow_unload();
+    return true;
+  }, {capture: true});
 })();
 </script>
 

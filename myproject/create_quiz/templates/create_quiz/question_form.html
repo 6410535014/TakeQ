@@ -115,6 +115,10 @@
   const qtypeSelect = document.querySelector('#id_qtype');
   const choicesBlock = document.getElementById('choices-block');
   const correctTextDiv = document.getElementById('div_correct_text');
+    const addBtn = document.getElementById('add-choice-btn');
+  const container = document.getElementById('choices-container');
+  const emptyTplEl = document.getElementById('empty-form-template');
+  const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
 
   function toggleByQtype(){
     const v = qtypeSelect ? qtypeSelect.value : null;
@@ -149,24 +153,27 @@
     items.forEach((item, idx)=>{
       item.setAttribute('data-form-index', idx);
       item.querySelectorAll('input, select, textarea, label').forEach(node=>{
-        if(node.name) node.name = node.name.replace(/-\d+-/, '-' + idx + '-');
-        if(node.id) node.id = node.id.replace(/-\d+-/, '-' + idx + '-');
-        if(node.htmlFor) node.htmlFor = node.htmlFor.replace(/-\d+-/, '-' + idx + '-');
+        if(node.name) node.name = node.name.replace(/-\d+-/g, '-' + idx + '-');
+        if(node.id) node.id = node.id.replace(/-\d+-/g, '-' + idx + '-');
+        if(node.htmlFor) node.htmlFor = node.htmlFor.replace(/-\d+-/g, '-' + idx + '-');
       });
     });
   }
 
-  if(addBtn && emptyTplEl){
+  if(addBtn && emptyTplEl && container && totalFormsInput){
     addBtn.addEventListener('click', function(){
       const idx = getTotalForms();
       let newHtml = emptyTplEl.innerHTML.replace(/__prefix__/g, idx);
       const wrapper = document.createElement('div');
-      wrapper.innerHTML = newHtml;
+      wrapper.innerHTML = newHtml.trim();
       const newEl = wrapper.firstElementChild;
+      if (!newEl) return;
       newEl.classList.add('choice-item','mb-2','border','rounded','p-2');
       container.appendChild(newEl);
       setTotalForms(idx + 1);
       reindexForms();
+      const firstInput = newEl.querySelector('input[type="text"], textarea');
+      if(firstInput) firstInput.focus();
     });
   }
 
@@ -201,4 +208,5 @@
 
 })();
 </script>
+
 {% endblock %}

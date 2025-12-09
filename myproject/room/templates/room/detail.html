@@ -8,7 +8,7 @@
     <h2>ห้อง: {{ room.name }} (รหัส {{ room.code }})</h2>
 
     <div>
-      {% if request.user == room.owner or role == 'owner' or role == 'admin' %}
+      {% if request.user == room.owner or role == 'owner'%}
         <a href="{% url 'create_quiz:quiz_create_for_room' room.code %}?room={{ room.code }}" class="btn btn-primary btn-sm">สร้าง Quiz ใหม่</a>
 
         <a href="{% url 'room:manage_members' room.code %}" class="btn btn-secondary btn-sm">จัดการสมาชิก</a>
@@ -17,6 +17,9 @@
           {% csrf_token %}
           <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this room? This action cannot be undone.');">ลบห้อง</button>
         </form>
+      {% elif role == 'admin' %}
+        <a href="{% url 'create_quiz:quiz_create_for_room' room.code %}?room={{ room.code }}" class="btn btn-primary btn-sm">สร้าง Quiz ใหม่</a>
+        <a href="{% url 'room:manage_members' room.code %}" class="btn btn-secondary btn-sm">จัดการสมาชิก</a>
       {% else %}
         <a href="{% url 'room:manage_members' room.code %}" class="btn btn-secondary btn-sm">สมาชิก</a>
       {% endif %}

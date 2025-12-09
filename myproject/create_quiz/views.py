@@ -132,9 +132,24 @@ class QuizDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         quiz = self.get_object()
-        room_code = self.request.GET.get('room') or self.request.session.get(f"last_room_for_quiz_{quiz.pk}")
-        ctx['room_code'] = room_code
-        ctx['is_room_admin'] = user_is_room_owner_or_admin_for_quiz(self.request.user, quiz)
+
+        raw_room = self.request.GET.get("room")
+
+        if not raw_room:
+            raw_room = self.request.session.get(f"last_room_for_quiz_{quiz.pk}")
+
+        room_code = None
+        if raw_room and str(raw_room).strip().lower() not in ("none", ""):
+            if Room.objects.filter(code=raw_room).exists():
+                room_code = raw_room
+
+        if room_code:
+            self.request.session[f"last_room_for_quiz_{quiz.pk}"] = room_code
+
+        ctx["room_code"] = room_code
+
+        ctx["is_room_admin"] = user_is_room_owner_or_admin_for_quiz(self.request.user, quiz)
+
         return ctx
 
 

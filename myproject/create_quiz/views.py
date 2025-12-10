@@ -487,8 +487,10 @@ def mark_answer(request, answer_id):
 
     if total_gradable > 0:
         attempt.score = (correct_count / total_gradable) * 100.0
+        attempt.graded = True
     else:
         attempt.score = None
+        attempt.graded = False
 
     attempt.save()
 

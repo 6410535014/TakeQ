@@ -80,6 +80,7 @@ class Attempt(models.Model):
     started_at = models.DateTimeField(auto_now_add=True)
     finished_at = models.DateTimeField(null=True, blank=True)
     score = models.FloatField(null=True, blank=True)
+    graded = models.BooleanField(default=False)
 
     room = models.ForeignKey(
         'room.Room',

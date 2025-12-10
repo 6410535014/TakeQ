@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 
+{% block title %}
+  <title>การเข้าทำ Quiz - {{ quiz.title }}</title>
+{% endblock %}
+
 {% block content %}
 <div class="container py-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Attempts — {{ quiz.title }}</h3>
+    <h3>การเข้าทำ Quiz: {{ quiz.title }}</h3>
     <div>
-        <a class="btn btn-outline-secondary" href="{% url 'create_quiz:quiz_detail' quiz.pk %}">Back</a>
+        <a class="btn btn-sm btn-dark" href="{% url 'create_quiz:quiz_detail' quiz.pk %}">ย้อนกลับ</a>
     </div>
   </div>
 
@@ -15,18 +19,22 @@
         <div>
           <strong>{{ att.taker.username }}</strong>
           <div class="small text-muted">
-            started: {{ att.started_at|date:"Y-m-d H:i" }}{% if att.finished_at %} — finished: {{ att.finished_at|date:"Y-m-d H:i" }}{% endif %}
+            เริ่ม: {{ att.started_at|date:"Y-m-d H:i" }}{% if att.finished_at %} - เสร็จสิ้น: {{ att.finished_at|date:"Y-m-d H:i" }}{% endif %}
           </div>
         </div>
         <div class="text-end">
-          <span class="me-3">
-            {% if att.score is not None %}Score: {{ att.score|floatformat:1 }}{% else %}Not graded{% endif %}
-          </span>
-          <a href="{% url 'create_quiz:attempt_detail' att.id %}" class="btn btn-sm btn-primary">View answers</a>
+            <span class="me-3">
+              {% if att.graded %}
+                คะแนน: {{ att.score|floatformat:0 }} %
+              {% else %}
+                รอการตรวจให้คะแนน
+              {% endif %}
+            </span>
+          <a href="{% url 'create_quiz:attempt_detail' att.id %}" class="btn btn-sm btn-primary">ดูคำตอบ</a>
         </div>
       </div>
     {% empty %}
-      <div class="list-group-item">No attempts yet.</div>
+      <div class="list-group-item">ยังไม่มีการเข้ามาทำ Quiz</div>
     {% endfor %}
   </div>
 </div>

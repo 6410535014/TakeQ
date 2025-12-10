@@ -1,91 +1,85 @@
 {% extends "base.html" %}
 
 {% block title %}
-  <title>ผลลัพธ์ - {{ attempt.quiz.title }}</title>
+  <title>ผลสอบ - {{ attempt.quiz.title }}</title>
 {% endblock %}
 
 {% block content %}
-<h2>Result: {{ attempt.quiz.title }}</h2>
+<div class="container py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>ผลสอบ: {{ attempt.quiz.title }}</h2>
 
-<p>Started: {{ attempt.started_at }}</p>
-<p>Finished: {{ attempt.finished_at }}</p>
-{% if show_score %}
-  <p>Score: {{ attempt.score|floatformat:2 }}%</p>
-{% else %}
-  <p>Score: Not available (requires manual grading of short answers)</p>
-{% endif %}
+    <div>
+      <a class="btn btn-dark btn-sm" href="{% url 'room:detail' back_room %}">ย้อนกลับ</a>
+    </div>
+  </div>
 
-<hr>
-<h4>Answers</h4>
-<ul class="list-group mb-4">
-  {% for row in answer_rows %}
-    <li class="list-group-item">
-
-      {# ---------- NUMBER + MARK ON FIRST LINE ---------- #}
-      <div class="mb-1">
-        <strong>{{ forloop.counter }}.</strong>
-
-        {% if row.is_correct is True %}
-          <span class="badge bg-success ms-1">Correct</span>
-        {% elif row.is_correct is False %}
-          <span class="badge bg-danger ms-1">Incorrect</span>
-        {% else %}
-          <span class="badge bg-secondary ms-1">Not marked</span>
-        {% endif %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <p><strong>เริ่ม: </strong>{{ attempt.started_at }}</p>
+      <p><strong>เสร็จสิ้น: </strong>{{ attempt.finished_at }}</p>
+      {% if show_score %}
+        <p><strong>คะแนน: </strong>{{ attempt.score|floatformat:0 }} %</p>
+      {% else %}
+        <p><strong>คะแนน: </strong>Not available (requires manual grading of short answers) รอการตรวจให้คะแนน</p>
+      {% endif %}
       </div>
+  </div>
 
-      {# ---------- QUESTION ON NEXT LINE ---------- #}
-      <div class="mb-2">
-        <strong>{{ row.question.text }}</strong>
-      </div>
-
-      {# ---------- YOUR ANSWER ---------- #}
-      <div class="mb-1">
-        <strong>Your answer:</strong>
-        {% if row.qtype == 'mcq' %}
-            {% if row.selected_choice %}
-                {{ row.selected_choice.text }}
-            {% else %}
-                <em>No answer</em>
-            {% endif %}
-        {% else %}
-            {% if row.text %}
-                {{ row.text }}
-            {% else %}
-                <em>No answer provided</em>
-            {% endif %}
-        {% endif %}
-      </div>
-
-      {# ---------- CORRECT ANSWER ---------- #}
-      <div>
-        <strong>Correct answer:</strong>
-        {% if row.qtype == 'mcq' %}
-          {% if row.correct_choice %}
-            {{ row.correct_choice.text }}
+  <h4>คำตอบ</h4>
+  <ul class="list-group mb-4">
+    {% for row in answer_rows %}
+      <li class="list-group-item">
+        <div class="mb-1">
+          <strong>{{ forloop.counter }}.</strong>
+          {% if row.is_correct is True %}
+            <span class="badge bg-success ms-1">ถูกต้อง</span>
+          {% elif row.is_correct is False %}
+            <span class="badge bg-danger ms-1">ผิด</span>
           {% else %}
-            <em>(no correct choice set)</em>
+            <span class="badge bg-secondary ms-1">รอการตรวจ</span>
           {% endif %}
-        {% else %}
-          {% if row.correct_text %}
-            {{ row.correct_text }}
+        </div>
+
+        <div class="mb-2">
+          {{ row.question.text }}
+        </div>
+
+        <div class="mb-1">
+          <strong>คำตอบ:</strong>
+          {% if row.qtype == 'mcq' %}
+              {% if row.selected_choice %}
+                  {{ row.selected_choice.text }}
+              {% else %}
+                  <em>ไม่มีคำตอบ</em>
+              {% endif %}
           {% else %}
-            <em>Requires manual grading</em>
+              {% if row.text %}
+                  {{ row.text }}
+              {% else %}
+                  <em>ไม่ได้ตอบ</em>
+              {% endif %}
           {% endif %}
-        {% endif %}
-      </div>
+        </div>
 
-    </li>
-  {% endfor %}
-</ul>
-
-
-
-<div>
-  {% if back_room %}
-    <a href="{% url 'room:detail' back_room %}" class="btn btn-secondary">Back to room</a>
-  {% else %}
-    <a href="{% url 'take_quiz:quiz_list' %}" class="btn btn-secondary">Back to quizzes</a>
-  {% endif %}
+        <div>
+          <strong>คำตอบที่ถูกต้อง:</strong>
+          {% if row.qtype == 'mcq' %}
+            {% if row.correct_choice %}
+              {{ row.correct_choice.text }}
+            {% else %}
+              <em>(ไม่มีตัวเลือกที่ถูกต้อง)</em>
+            {% endif %}
+          {% else %}
+            {% if row.correct_text %}
+              {{ row.correct_text }}
+            {% else %}
+              <em>รอการตรวจให้คะแนน</em>
+            {% endif %}
+          {% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
 </div>
 {% endblock %}

@@ -1,26 +1,32 @@
 {% extends "base.html" %}
 
+{% block title %}
+  <title>ตรวจคำตอบ - {{ attempt.taker.username }}</title>
+{% endblock %}
+
 {% block content %}
 <div class="container py-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>คำตอบ - {{ quiz.title }}</h3>
+    <h3>ตรวจคำตอบ: {{ quiz.title }}</h3>
     <div>
-      <a class="btn btn-outline-secondary" href="{% url 'create_quiz:quiz_attempts' quiz.pk %}">Back</a>
+      <a class="btn btn-sm btn-dark" href="{% url 'create_quiz:quiz_attempts' quiz.pk %}">ย้อนกลับ</a>
     </div>
   </div>
 
   <div class="card mb-3">
     <div class="card-body">
-      <p><strong>Student:</strong> {{ attempt.taker.username }}</p>
-      <p><strong>Started:</strong> {{ attempt.started_at|date:"Y-m-d H:i" }}</p>
-      <p><strong>Finished:</strong> {% if attempt.finished_at %}{{ attempt.finished_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}</p>
-      <p><strong>Score:</strong> {% if attempt.score is not None %}{{ attempt.score|floatformat:1 }}{% else %}Not graded{% endif %}</p>
+      <p><strong>สมาชิก:</strong> {{ attempt.taker.username }}</p>
+      <p><strong>เริ่ม:</strong> {{ attempt.started_at|date:"Y-m-d H:i" }}</p>
+      <p><strong>เสร็จสิ้น:</strong> {% if attempt.finished_at %}{{ attempt.finished_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}</p>
+      <p><strong>คะแนน:</strong> {% if attempt.score is not None %}{{ attempt.score|floatformat:0 }} %{% else %}ยังไม่ได้รับการตรวจให้คะแนน{% endif %}</p>
     </div>
   </div>
 
+  <h4>คำตอบ</h4>
+  
   <ol class="list-group list-group-numbered">
     {% for row in answer_rows %}
-      <li class="list-group-item">
+      <li id="answer-{{ row.answer_id }}" class="list-group-item">
         <div class="mb-1"><strong>{{ row.question.text }}</strong></div>
 
         {% if row.question.qtype == 'mcq' %}
@@ -31,26 +37,25 @@
                 <label class="form-check-label">
                   {{ c.text }}
                   {% if c.is_correct %}
-                    <span class="badge bg-success ms-2">Correct</span>
+                    <span class="badge bg-success ms-2">ถูกต้อง</span>
                   {% endif %}
                 </label>
               </div>
             {% endfor %}
           </div>
+
           <div class="mt-2">
-            <small>
-              Student chose:
+              เลือกตอบ:
               {% if row.selected_choice %}
                 <strong>{{ row.selected_choice.text }}</strong>
-                {% if row.is_correct %}
-                  <span class="text-success">(correct)</span>
+                {% if row.selected_choice.is_correct %}
+                  <span class="text-success">(ถูก)</span>
                 {% else %}
-                  <span class="text-danger">(incorrect)</span>
+                  <span class="text-danger">(ผิด)</span>
                 {% endif %}
               {% else %}
-                <em>No answer</em>
+                <em>ไม่ได้เลือกคำตอบ</em>
               {% endif %}
-            </small>
           </div>
         {% else %}
           <div class="border rounded p-2 mb-2">
@@ -60,16 +65,16 @@
           {% if request.user == quiz.creator or is_room_admin %}
             <form method="post" action="{% url 'create_quiz:mark_answer' row.answer_id %}" style="display:inline;">
               {% csrf_token %}
-              <input type="hidden" name="next" value="{{ request.path }}">
-              <button type="submit" name="mark" value="correct" class="btn btn-sm btn-success">Mark correct</button>
-              <button type="submit" name="mark" value="incorrect" class="btn btn-sm btn-outline-danger">Mark incorrect</button>
+              <input type="hidden" name="next" value="{{ request.get_full_path }}#answer-{{ row.answer_id }}">
+              <button type="submit" name="mark" value="correct" class="btn btn-sm btn-outline-success">ถูก</button>
+              <button type="submit" name="mark" value="incorrect" class="btn btn-sm btn-outline-danger">ผิด</button>
             </form>
             {% if row.is_correct is not None %}
               <span class="ms-2">
                 {% if row.is_correct %}
-                  <span class="badge bg-success">Correct</span>
+                  <span class="badge bg-success">ถูกต้อง</span>
                 {% else %}
-                  <span class="badge bg-danger">Incorrect</span>
+                  <span class="badge bg-danger">ผิด</span>
                 {% endif %}
               </span>
             {% endif %}
@@ -80,3 +85,97 @@
   </ol>
 </div>
 {% endblock %}
+
+
+<script>
+(function(){
+  const ATTEMPT_KEY = 'attempt_scroll_{{ attempt.id }}';
+  const markPrefix = '{% url "create_quiz:mark_answer" 0 %}'.replace('/0/','/');
+
+  let saveTimer = null;
+  function saveScrollY() {
+    try {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        sessionStorage.setItem(ATTEMPT_KEY, String(window.scrollY || 0));
+      }, 20);
+    } catch (e) {}
+  }
+
+  function saveAndSetHash(fragment) {
+    try {
+      if (fragment) {
+        history.replaceState(null, '', '#' + fragment);
+      }
+      sessionStorage.setItem(ATTEMPT_KEY, String(window.scrollY || 0));
+    } catch (e) {}
+  }
+
+  function attachMarkFormHandlers() {
+    const forms = Array.from(document.querySelectorAll('form'));
+    forms.forEach(f => {
+      const action = f.getAttribute('action') || '';
+      if (action.indexOf(markPrefix) !== -1) {
+        f.addEventListener('submit', function () {
+          try {
+            const nextInput = f.querySelector('input[name="next"]');
+            if (nextInput && nextInput.value && nextInput.value.indexOf('#') !== -1) {
+              const frag = nextInput.value.split('#')[1];
+              if (frag) saveAndSetHash(frag);
+              else saveScrollY();
+            } else {
+              saveScrollY();
+            }
+          } catch (e) { saveScrollY(); }
+        }, {capture: true});
+      }
+    });
+  }
+
+  window.addEventListener('scroll', function () { saveScrollY(); }, {passive:true});
+
+  window.addEventListener('beforeunload', function () {
+    try { sessionStorage.setItem(ATTEMPT_KEY, String(window.scrollY || 0)); } catch(e) {}
+  });
+
+  function restorePosition() {
+    try {
+      if (window.location.hash) {
+        try {
+          const el = document.querySelector(window.location.hash);
+          if (el) { el.scrollIntoView({behavior:'auto', block:'center'}); return true; }
+        } catch(e) {}
+      }
+
+      const s = sessionStorage.getItem(ATTEMPT_KEY);
+      if (s) {
+        const y = parseInt(s,10) || 0;
+        window.scrollTo(0, y);
+        sessionStorage.removeItem(ATTEMPT_KEY);
+        return true;
+      }
+    } catch(e){}
+    return false;
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    attachMarkFormHandlers();
+
+    let attempts = 0;
+    const maxAttempts = 6;
+    const retry = function() {
+      attempts++;
+      const ok = restorePosition();
+      if (!ok && attempts < maxAttempts) {
+        setTimeout(retry, 150 * attempts);
+      }
+    };
+    retry();
+  });
+
+  window.addEventListener('load', function(){
+    setTimeout(function(){ restorePosition(); }, 50);
+  });
+
+})();
+</script>

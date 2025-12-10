@@ -116,9 +116,16 @@
                   <label class="form-label fw-semibold">บทบาท</label>
                   <select name="{{ invite_form.role.name }}" class="form-select">
                       {% for value, label in invite_form.role.field.choices %}
-                      <option value="{{ value }}">{{ label }}</option>
+                          {% if request.user == room.owner %}
+                              <option value="{{ value }}">{{ label }}</option>
+                          {% else %}
+                              {% if value == "student" %}
+                                  <option value="{{ value }}">{{ label }}</option>
+                              {% endif %}
+                          {% endif %}
                       {% endfor %}
                   </select>
+
                   <div class="form-text mt-1">
                       <span class="text-muted">
                       เจ้าของห้องสามารถเชิญได้ทั้ง <strong>ผู้ดูแลห้อง</strong> หรือ <strong>สมาชิก</strong><br>

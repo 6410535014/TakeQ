@@ -6,7 +6,7 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from myapp.models import Quiz, Question, Choice, Attempt, Answer
 from .forms import QuizForm, QuestionForm, make_choice_formset
-from django.http import JsonResponse, HttpResponseForbidden, Http404
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponseForbidden, Http404
 from django.views.decorators.http import require_POST
 from room.models import RoomQuizAssignment, RoomMembership, Room
 from django.contrib.auth import get_user_model
@@ -397,18 +397,28 @@ def attempt_detail(request, attempt_id):
     attempt = get_object_or_404(Attempt, pk=attempt_id)
     quiz = attempt.quiz
 
-    if not (quiz.creator == request.user or user_is_room_owner_or_admin_for_quiz(request.user, quiz)):
+    is_room_admin = user_is_room_owner_or_admin_for_quiz(request.user, quiz)
+    if not (quiz.creator == request.user or is_room_admin):
         return HttpResponseForbidden()
 
     answers = attempt.answers.select_related('question', 'selected_choice').all().order_by('question__order', 'question__id')
 
     answer_rows = []
     for a in answers:
+        q = a.question
+        if getattr(q, "qtype", None) == "mcq":
+            is_correct_flag = bool(a.selected_choice and getattr(a.selected_choice, "is_correct", False))
+            correct_choice = q.choices.filter(is_correct=True).first()
+        else:
+            is_correct_flag = a.is_correct
+            correct_choice = None
+
         row = {
-            'question': a.question,
+            'question': q,
             'selected_choice': a.selected_choice,
             'text': a.text,
-            'is_correct': a.is_correct,
+            'is_correct': is_correct_flag,
+            'correct_choice': correct_choice,
             'answer_id': a.pk,
         }
         answer_rows.append(row)
@@ -417,6 +427,7 @@ def attempt_detail(request, attempt_id):
         'quiz': quiz,
         'attempt': attempt,
         'answer_rows': answer_rows,
+        'is_room_admin': is_room_admin,
     })
 
 def _set_last_room_for_quiz_in_session(request, quiz_pk, room_code):
@@ -470,6 +481,8 @@ def mark_answer(request, answer_id):
         ans.is_correct = False
     ans.save()
 
+    next_url = request.POST.get('next') or request.GET.get('next') or request.META.get('HTTP_REFERER') or '/'
+    
     questions = quiz.questions.all()
     gradable_qs = questions.filter(qtype__in=["mcq", "short"])
     total_gradable = gradable_qs.count()
@@ -496,4 +509,4 @@ def mark_answer(request, answer_id):
 
     messages.success(request, "Answer marked.")
     next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or "/"
-    return redirect(next_url)
+    return HttpResponseRedirect(next_url)

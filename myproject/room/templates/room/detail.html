@@ -118,9 +118,9 @@
             {% with the_quiz=q %}
               {% if the_quiz and the_quiz.pk %}
                 {% if the_quiz.pk in attempted_quiz_ids %}
-                  <a class="btn btn-secondary btn-sm"
+                  <a class="btn btn-success btn-sm"
                     href="{% url 'take_quiz:attempt_result' attempt_map|dict_get:the_quiz.pk %}">
-                    ผลลัพธ์
+                    ผลสอบ
                   </a>
                 {% else %}
                   <a class="btn btn-primary btn-sm"
@@ -140,5 +140,4 @@
     </ul>
   {% endif %}
 </div>
-
 {% endblock %}

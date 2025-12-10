@@ -42,8 +42,8 @@ class Question(models.Model):
     qtype = models.CharField(
         max_length=20,
         choices=(
-            ("mcq", "MCQ"),
-            ("short", "Short Answer"),
+            ("mcq", "ตัวเลือก"),
+            ("short", "คำตอบสั้น ๆ"),
         ),
     )
     order = models.PositiveIntegerField(default=0)

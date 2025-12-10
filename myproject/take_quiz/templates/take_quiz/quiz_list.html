@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}<title>Available Quizzes</title>{% endblock %}
+{% block title %}
+  <title>Quiz ที่ถูกมอบหมาย</title>
+{% endblock %}
 
 {% block content %}
-<h2>Available quizzes</h2>
+<h2>Quiz ที่ถูกมอบหมาย</h2>
 <div class="list-group">
   {% for quiz in quizzes %}
     <div class="list-group-item d-flex justify-content-between align-items-center">
@@ -11,20 +13,20 @@
         <h5>{{ quiz.title }}</h5>
         <p class="mb-1">{{ quiz.description|truncatechars:120 }}</p>
         <small>
-          {% if quiz.creator %}By {{ quiz.creator.username }}{% else %}By (unknown){% endif %}
+          {% if quiz.creator %}โดย {{ quiz.creator.username }}{% else %}โดย (ไม่ระบุ){% endif %}
            • {{ quiz.created_at|date:"Y-m-d" }}
         </small>
       </div>
       <div>
         {% if quiz.id in attempted_quiz_ids %}
-          <button class="btn btn-secondary" disabled>Already taken</button>
+          <button class="btn btn-secondary" disabled>ทำไปแล้ว</button>
         {% else %}
-          <a class="btn btn-primary" href="{% url 'take_quiz:start_quiz' quiz.id %}">Start</a>
+          <a class="btn btn-primary" href="{% url 'take_quiz:start_quiz' quiz.id %}">เริ่ม</a>
         {% endif %}
       </div>
     </div>
   {% empty %}
-    <p>No quizzes available.</p>
+    <p>ไม่มี Quiz ที่ถูกมอบหมาย</p>
   {% endfor %}
 </div>
 {% endblock %}

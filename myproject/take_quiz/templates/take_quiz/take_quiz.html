@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}<title>Take: {{ quiz.title }}</title>{% endblock %}
+{% block title %}
+  <title>ทำ - {{ quiz.title }}</title>
+{% endblock %}
 
 {% block content %}
 <h2>{{ quiz.title }}</h2>
@@ -8,10 +10,10 @@
 {% if quiz.time_limit_minutes %}
   <div class="mb-3 d-flex align-items-center gap-3">
     <span class="badge bg-info text-dark">
-      Time limit: {{ quiz.time_limit_minutes }} minute{% if quiz.time_limit_minutes != 1 %}s{% endif %}
+      กำหนดเวลา: {{ quiz.time_limit_minutes }} นาที{% if quiz.time_limit_minutes != 1 %}s{% endif %}
     </span>
 
-    <div id="quiz-timer" class="fw-semibold text-danger">Loading timer...</div>
+    <div id="quiz-timer" class="fw-semibold text-danger">กำลังโหลดตัวจับเวลา...</div>
   </div>
 
   <script>
@@ -162,7 +164,7 @@
 
         {% elif q.qtype == "short" %}
           <div class="mb-2">
-            <label for="qa_{{ q.id }}" class="form-label">Your answer</label>
+            <label for="qa_{{ q.id }}" class="form-label">คำตอบของคุณ</label>
             <textarea id="qa_{{ q.id }}"
                       name="question_{{ q.id }}"
                       class="form-control form-control-sm short-answer-input"

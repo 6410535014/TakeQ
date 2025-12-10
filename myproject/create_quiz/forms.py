@@ -7,10 +7,10 @@ QTYPE_CHOICES = Question._meta.get_field("qtype").choices
 class QuizForm(forms.ModelForm):
     class Meta:
         model = Quiz
-        fields = ["title", "description", "time_limit_minutes"]
+        fields = ['title', 'description', 'time_limit_minutes']
         labels = {
-            "title": "ชื่อ",
-            "description": "คำอธิบาย",
+            'title': 'ชื่อ',
+            'description': 'คำอธิบาย',
         }
 
     def __init__(self, *args, **kwargs):
@@ -26,14 +26,20 @@ class QuizForm(forms.ModelForm):
             })
 
 class QuestionForm(forms.ModelForm):
-    qtype = forms.ChoiceField(choices=QTYPE_CHOICES, initial="short", required=True)
+    qtype = forms.ChoiceField(choices=QTYPE_CHOICES, initial="short", required=True,label="ประเภทคำถาม")
 
     class Meta:
         model = Question
         fields = ['text', 'qtype', 'order', 'correct_text'] 
+        labels = {
+            'text': 'โจทย์',
+            'qtype': 'ประเภทคำถาม',
+            'order': 'ลำดับ',
+            'correct_text': 'คำตอบที่ถูกต้อง',
+        }
         widgets = {
-            "order": forms.HiddenInput(),
-            'correct_text': forms.Textarea(attrs={'rows':3, 'class': 'form-control', 'placeholder': 'Model answer / rubric for short answers'}),
+            'order': forms.HiddenInput(),
+            'correct_text': forms.Textarea(attrs={'rows':3, 'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -75,10 +81,13 @@ class BaseChoiceInlineFormSet(BaseInlineFormSet):
 
 def make_choice_formset(extra=0, can_delete=True):
     return inlineformset_factory(
-        Question,
-        Choice,
-        fields=("text", "is_correct"),
-        extra=extra,
-        can_delete=can_delete,
-        formset=BaseChoiceInlineFormSet
-    )
+                Question,
+                Choice,
+                fields=('text', 'is_correct'),
+                labels={
+                    'text': 'ตัวเลือก',
+                    'is_correct': 'คำตอบที่ถูกต้อง'
+                },
+                extra=1,
+                can_delete=True
+            )

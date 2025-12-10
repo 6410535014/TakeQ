@@ -47,7 +47,7 @@
           <div>
             <strong>{{ q.title }}</strong>
             {% if q.is_published %}
-              <span class="badge bg-success ms-2">เปิดให้ทำ</span>
+              <span class="badge bg-success ms-2">เปิด</span>
             {% else %}
               <span class="badge bg-secondary ms-2">ปิด</span>
             {% endif %}
@@ -71,7 +71,7 @@
         </li>
         {% endwith %}
       {% empty %}
-        <li class="list-group-item">ยังไม่มี Quiz ที่ถูกมอบหมายให้ห้องนี้</li>
+        <li class="list-group-item">ไม่มี Quiz ที่ถูกมอบหมายให้ห้องนี้</li>
       {% endfor %}
     </ul>
 
